@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../layout/PageHeader';
 import MealPlanCard from './MealPlanCard';
 import CreatePlanCard from './CreatePlanCard';
+import SupabaseTest from '../../common/SupabaseTest';
 import type { MealPlan } from '../../../types';
 import { mockMealPlans } from '../../../utils/mockData';
 
@@ -37,6 +38,9 @@ const Dashboard: React.FC = () => {
       />
       
       <div className="p-8 space-y-8">
+        {/* Supabase Connection Test */}
+        <SupabaseTest />
+        
         {/* My Meal Plans */}
         <section>
           <h2 className="text-2xl font-bold mb-4 text-text-primary">

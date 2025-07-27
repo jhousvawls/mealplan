@@ -194,6 +194,34 @@ body {
     @apply active:scale-95;
   }
   
+  /* Button Sizes */
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+  
+  .btn-md {
+    @apply px-4 py-2 text-base;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+  
+  /* Button States */
+  .btn-loading {
+    @apply opacity-75 cursor-not-allowed;
+  }
+  
+  .btn-disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .btn-outline {
+    @apply bg-transparent text-blue border border-blue;
+    @apply hover:bg-blue hover:text-white;
+    @apply active:scale-95;
+  }
+  
   /* Card Base */
   .card {
     @apply bg-background-secondary border border-border rounded-2xl;
@@ -203,6 +231,27 @@ body {
   
   .card-hover {
     @apply hover:shadow-md hover:scale-[1.02];
+  }
+  
+  /* Card Components */
+  .card-header {
+    @apply flex items-start justify-between p-6 border-b border-border;
+  }
+  
+  .card-content {
+    @apply p-6;
+  }
+  
+  .card-title {
+    @apply text-xl font-bold text-text-primary;
+  }
+  
+  .card-subtitle {
+    @apply text-sm text-text-secondary mt-1;
+  }
+  
+  .card-actions {
+    @apply flex items-center space-x-2;
   }
   
   /* Input Base */
@@ -246,6 +295,18 @@ body {
   .page-header {
     @apply p-8 bg-background-secondary border-b border-border;
     @apply flex justify-between items-center;
+  }
+  
+  .page-title {
+    @apply text-3xl font-bold text-text-primary;
+  }
+  
+  .page-subtitle {
+    @apply text-lg text-text-secondary mt-1;
+  }
+  
+  .page-actions {
+    @apply flex items-center space-x-4;
   }
   
   /* Sidebar */

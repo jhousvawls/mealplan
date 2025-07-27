@@ -54,11 +54,11 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="fixed top-0 left-0 h-full bg-white border-r border-gray-200 w-20 md:w-64 flex flex-col z-10 transition-all duration-300 hidden md:flex">
+      <aside className="sidebar hidden md:flex">
         {/* Logo */}
-        <div className="flex items-center justify-center md:justify-start h-20 border-b border-gray-200 px-6">
-          <SparklesIcon className="w-6 h-6 text-blue-600" />
-          <span className="hidden md:inline ml-3 text-lg font-bold text-blue-600">
+        <div className="flex items-center justify-center md:justify-start h-20 border-b border-border px-6">
+          <SparklesIcon className="w-6 h-6 text-blue" />
+          <span className="hidden md:inline ml-3 text-lg font-bold text-blue">
             MealMate
           </span>
         </div>
@@ -73,11 +73,7 @@ export default function Sidebar() {
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.path)}
-                className={`flex items-center p-3 rounded-lg w-full transition-all duration-200 min-h-[44px] min-w-[44px] ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-600' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
               >
                 <Icon className="w-6 h-6" />
                 <span className="hidden md:inline ml-4 font-medium">
@@ -89,7 +85,7 @@ export default function Sidebar() {
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
+        <div className="p-4 border-t border-border space-y-2">
           {/* User Info */}
           <div className="flex items-center p-3 rounded-lg">
             {mockUser?.avatar_url ? (
@@ -99,9 +95,9 @@ export default function Sidebar() {
                 className="w-8 h-8 rounded-full"
               />
             ) : (
-              <UserIcon className="w-6 h-6 text-gray-500" />
+              <UserIcon className="w-6 h-6 text-text-secondary" />
             )}
-            <span className="hidden md:inline ml-4 font-semibold text-gray-900">
+            <span className="hidden md:inline ml-4 font-semibold text-text-primary">
               {mockUser?.full_name || 'User'}
             </span>
           </div>
@@ -109,7 +105,7 @@ export default function Sidebar() {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="flex items-center p-3 rounded-lg w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 min-h-[44px] min-w-[44px]"
+            className="nav-item"
             aria-label="Toggle theme"
           >
             {theme === 'dark' ? (
@@ -125,7 +121,7 @@ export default function Sidebar() {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className="flex items-center p-3 rounded-lg w-full text-red-600 hover:bg-red-50 transition-all duration-200 min-h-[44px] min-w-[44px]"
+            className="flex items-center p-3 rounded-lg w-full text-accent-red hover:bg-accent-red hover:bg-opacity-10 transition-all duration-200 touch-target"
           >
             <ArrowRightOnRectangleIcon className="w-6 h-6" />
             <span className="hidden md:inline ml-4 font-medium">
@@ -136,7 +132,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around h-16 z-20 md:hidden">
+      <nav className="bottom-nav md:hidden">
         {navItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -145,7 +141,7 @@ export default function Sidebar() {
             <button
               key={item.id}
               onClick={() => handleNavigation(item.path)}
-              className={`flex flex-col items-center justify-center flex-1 py-2 ${
+              className={`flex flex-col items-center justify-center flex-1 py-2 touch-target ${
                 isActive ? 'text-blue' : 'text-text-secondary'
               }`}
             >
@@ -158,7 +154,7 @@ export default function Sidebar() {
         {/* More Menu for Mobile */}
         <button 
           onClick={() => handleNavigation('/settings')}
-          className="flex flex-col items-center justify-center flex-1 py-2 text-text-secondary"
+          className="flex flex-col items-center justify-center flex-1 py-2 text-text-secondary touch-target"
         >
           <Cog6ToothIcon className="w-6 h-6" />
           <span className="text-xs mt-1">More</span>

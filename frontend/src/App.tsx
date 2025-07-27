@@ -8,7 +8,7 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
-        <div className="bg-gray-50 min-h-screen font-sans text-gray-900">
+        <div className="bg-background-main min-h-screen font-sans text-text-primary">
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
