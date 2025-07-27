@@ -45,16 +45,23 @@ npm install
 
 3. Environment Setup:
 ```bash
-# Frontend (.env)
-REACT_APP_SUPABASE_URL=your_supabase_url
-REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Frontend (frontend/.env.local)
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:3001
 
-# Backend (.env)
+# Backend (backend/.env)
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_service_key
 OPENAI_API_KEY=your_openai_api_key
 PORT=3001
 ```
+
+**Important**: 
+- Copy `.env.example` to `frontend/.env.local` for frontend configuration
+- Copy `backend/.env.example` to `backend/.env` for backend configuration
+- Add your actual OpenAI API key to `backend/.env`
+- Never commit `.env` files to version control
 
 4. Database Setup:
 ```bash

@@ -33,22 +33,32 @@ This document outlines development standards, best practices, and workflows for 
 
 ### Environment Configuration
 
-#### Frontend (.env.local)
+#### Frontend (frontend/.env.local)
 ```bash
 # Supabase Configuration
-REACT_APP_SUPABASE_URL=https://your-project.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 
 # API Configuration
-REACT_APP_API_URL=http://localhost:3001
+VITE_API_URL=http://localhost:3001
 
 # Development Settings
-REACT_APP_ENVIRONMENT=development
-REACT_APP_LOG_LEVEL=debug
+VITE_ENVIRONMENT=development
+VITE_LOG_LEVEL=debug
+
+# Feature Flags
+VITE_ENABLE_AI_FEATURES=true
+VITE_ENABLE_SHARING=true
+VITE_ENABLE_WALMART_INTEGRATION=false
 ```
 
-#### Backend (.env)
+#### Backend (backend/.env)
 ```bash
+# Server Configuration
+PORT=3001
+NODE_ENV=development
+HOST=localhost
+
 # Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your-service-key
@@ -56,19 +66,34 @@ SUPABASE_SERVICE_KEY=your-service-key
 # OpenAI Configuration
 OPENAI_API_KEY=your-openai-key
 OPENAI_MODEL=gpt-4
+OPENAI_MAX_TOKENS=2000
+OPENAI_TEMPERATURE=0.7
 
-# Server Configuration
-PORT=3001
-NODE_ENV=development
-
-# Security
+# Security Configuration
 JWT_SECRET=your-jwt-secret
 CORS_ORIGIN=http://localhost:3000
+SESSION_SECRET=your-session-secret
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_AI_MAX_REQUESTS=10
+
+# Monitoring & Logging
+LOG_LEVEL=debug
+LOG_FORMAT=combined
+
+# Development Tools
+DEBUG=meal-planner:*
+VERBOSE_LOGGING=true
 ```
+
+**Important Notes:**
+- Frontend uses `VITE_` prefix for environment variables (Vite requirement)
+- Copy `.env.example` to `frontend/.env.local` for frontend configuration
+- Copy `backend/.env.example` to `backend/.env` for backend configuration
+- Never commit `.env` files to version control
+- OpenAI API key should only be in backend environment for security
 
 ## Code Standards
 
