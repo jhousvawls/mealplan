@@ -2,46 +2,8 @@ import { supabase } from '../lib/supabase';
 import type { Recipe, CreateRecipeData, UpdateRecipeData } from '../types';
 
 export class RecipeService {
-  // Helper to check if we're in development mode with dummy user
-  private isDummyUser(userId: string): boolean {
-    return userId === 'dummy-user-123';
-  }
-
-  // Development storage helpers
-  private getLocalRecipes(): Recipe[] {
-    const stored = localStorage.getItem('dev-recipes');
-    return stored ? JSON.parse(stored) : [];
-  }
-
-  private saveLocalRecipes(recipes: Recipe[]): void {
-    localStorage.setItem('dev-recipes', JSON.stringify(recipes));
-  }
-
   // Create a new recipe
   async createRecipe(data: CreateRecipeData): Promise<Recipe> {
-    // Use local storage for dummy user
-    if (this.isDummyUser(data.owner_id)) {
-      const recipe: Recipe = {
-        id: `recipe-${Date.now()}`,
-        name: data.name,
-        ingredients: data.ingredients,
-        instructions: data.instructions,
-        source_url: data.source_url,
-        prep_time: data.prep_time,
-        cuisine: data.cuisine,
-        estimated_nutrition: data.estimated_nutrition,
-        owner_id: data.owner_id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const recipes = this.getLocalRecipes();
-      recipes.unshift(recipe);
-      this.saveLocalRecipes(recipes);
-      return recipe;
-    }
-
-    // Use Supabase for real users
     const { data: recipe, error } = await supabase
       .from('recipes')
       .insert({
@@ -52,6 +14,14 @@ export class RecipeService {
         prep_time: data.prep_time,
         cuisine: data.cuisine,
         estimated_nutrition: data.estimated_nutrition,
+        featured_image: data.featured_image,
+        image_alt_text: data.image_alt_text,
+        meal_types: data.meal_types || [],
+        dietary_restrictions: data.dietary_restrictions || [],
+        difficulty: data.difficulty,
+        prep_time_category: data.prep_time_category,
+        tags: data.tags || [],
+        is_draft: data.is_draft || false,
         owner_id: data.owner_id,
       })
       .select()
@@ -66,12 +36,6 @@ export class RecipeService {
 
   // Get all recipes for the current user
   async getUserRecipes(userId: string): Promise<Recipe[]> {
-    // Use local storage for dummy user
-    if (this.isDummyUser(userId)) {
-      return this.getLocalRecipes();
-    }
-
-    // Use Supabase for real users
     const { data: recipes, error } = await supabase
       .from('recipes')
       .select('*')
@@ -231,11 +195,6 @@ export class RecipeService {
 
   // Check for duplicate recipes by URL
   async checkDuplicateRecipe(userId: string, sourceUrl: string): Promise<Recipe | null> {
-    if (this.isDummyUser(userId)) {
-      const recipes = this.getLocalRecipes();
-      return recipes.find(recipe => recipe.source_url === sourceUrl) || null;
-    }
-
     const { data: recipes, error } = await supabase
       .from('recipes')
       .select('*')
@@ -248,6 +207,93 @@ export class RecipeService {
     }
 
     return recipes?.[0] || null;
+  }
+
+  // Filter recipes by tags
+  async getRecipesByTags(userId: string, tags: string[]): Promise<Recipe[]> {
+    const { data: recipes, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('owner_id', userId)
+      .contains('tags', tags)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch recipes by tags: ${error.message}`);
+    }
+
+    return recipes || [];
+  }
+
+  // Filter recipes by dietary restrictions
+  async getRecipesByDietaryRestrictions(userId: string, restrictions: string[]): Promise<Recipe[]> {
+    const { data: recipes, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('owner_id', userId)
+      .contains('dietary_restrictions', restrictions)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch recipes by dietary restrictions: ${error.message}`);
+    }
+
+    return recipes || [];
+  }
+
+  // Advanced search with multiple filters
+  async searchRecipesAdvanced(userId: string, filters: {
+    query?: string;
+    cuisine?: string;
+    tags?: string[];
+    difficulty?: string;
+    prepTimeCategory?: string;
+    dietaryRestrictions?: string[];
+  }): Promise<Recipe[]> {
+    let query = supabase
+      .from('recipes')
+      .select('*')
+      .eq('owner_id', userId);
+
+    // Text search
+    if (filters.query) {
+      query = query.or(`name.ilike.%${filters.query}%, instructions.ilike.%${filters.query}%`);
+    }
+
+    // Cuisine filter
+    if (filters.cuisine) {
+      query = query.eq('cuisine', filters.cuisine);
+    }
+
+    // Difficulty filter
+    if (filters.difficulty) {
+      query = query.eq('difficulty', filters.difficulty);
+    }
+
+    // Prep time category filter
+    if (filters.prepTimeCategory) {
+      query = query.eq('prep_time_category', filters.prepTimeCategory);
+    }
+
+    // Tags filter
+    if (filters.tags && filters.tags.length > 0) {
+      query = query.overlaps('tags', filters.tags);
+    }
+
+    // Dietary restrictions filter
+    if (filters.dietaryRestrictions && filters.dietaryRestrictions.length > 0) {
+      query = query.overlaps('dietary_restrictions', filters.dietaryRestrictions);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data: recipes, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to search recipes: ${error.message}`);
+    }
+
+    return recipes || [];
   }
 }
 

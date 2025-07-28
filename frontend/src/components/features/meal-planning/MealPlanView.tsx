@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCurrentWeekMealPlan, useGetOrCreateCurrentWeekMealPlan } from '../../../hooks/useMealPlansQuery';
 import { mealPlanService } from '../../../services/mealPlanService';
@@ -38,10 +38,23 @@ export function MealPlanView({ className = '' }: MealPlanViewProps) {
   );
   const [selectedMealSlot, setSelectedMealSlot] = useState<SelectedMealSlot | null>(null);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [currentDayIndex, setCurrentDayIndex] = useState<number>(0);
+  const [compactView, setCompactView] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Get current week meal plan
-  const { data: mealPlan, isLoading, error } = useCurrentWeekMealPlan(user?.id || '');
+  const { data: mealPlan, isLoading, error, refetch } = useCurrentWeekMealPlan(user?.id || '');
   const getOrCreateMealPlan = useGetOrCreateCurrentWeekMealPlan();
+
+  // Initialize current day index based on today
+  useEffect(() => {
+    const today = new Date();
+    const todayDayIndex = DAYS_OF_WEEK.findIndex(day => isToday(day));
+    if (todayDayIndex !== -1) {
+      setCurrentDayIndex(todayDayIndex);
+    }
+  }, []);
 
   // Create meal plan if it doesn't exist
   useEffect(() => {
@@ -49,6 +62,51 @@ export function MealPlanView({ className = '' }: MealPlanViewProps) {
       getOrCreateMealPlan.mutate(user.id);
     }
   }, [user, mealPlan, isLoading, error, getOrCreateMealPlan]);
+
+  // Enhanced mobile navigation functions
+  const scrollToDay = (dayIndex: number) => {
+    if (scrollContainerRef.current) {
+      const dayWidth = compactView ? 192 : 320; // w-48 = 192px, w-80 = 320px
+      const scrollPosition = dayIndex * dayWidth;
+      scrollContainerRef.current.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      });
+      setCurrentDayIndex(dayIndex);
+      
+      // Light haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }
+  };
+
+  const handlePullToRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      // Light haptic feedback for successful refresh
+      if (navigator.vibrate) {
+        navigator.vibrate([50, 50, 50]);
+      }
+    } catch (error) {
+      console.error('Failed to refresh meal plan:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Handle scroll events to update current day indicator
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const dayWidth = compactView ? 192 : 320; // w-48 = 192px, w-80 = 320px
+    const scrollLeft = container.scrollLeft;
+    const newDayIndex = Math.round(scrollLeft / dayWidth);
+    
+    if (newDayIndex !== currentDayIndex && newDayIndex >= 0 && newDayIndex < DAYS_OF_WEEK.length) {
+      setCurrentDayIndex(newDayIndex);
+    }
+  };
 
   const handleWeekChange = (direction: 'prev' | 'next') => {
     const currentDate = new Date(currentWeekStart);
@@ -165,13 +223,59 @@ export function MealPlanView({ className = '' }: MealPlanViewProps) {
         className="mb-6"
       />
 
-      {/* Mobile: Horizontal Scrolling Days */}
+      {/* Mobile: Enhanced Navigation */}
       <div className="md:hidden">
-        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
-          {DAYS_OF_WEEK.map((dayOfWeek) => (
+        {/* Mobile Controls */}
+        <div className="flex items-center justify-between mb-4">
+          {/* Compact View Toggle */}
+          <button
+            onClick={() => setCompactView(!compactView)}
+            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>{compactView ? 'Single Day' : 'Compact'}</span>
+          </button>
+
+          {/* Pull to Refresh Button */}
+          <button
+            onClick={handlePullToRefresh}
+            disabled={isRefreshing}
+            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+          >
+            <svg 
+              className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
+        </div>
+
+        {/* Horizontal Scrolling Days */}
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className={`flex overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 ${
+            compactView ? 'space-x-2' : 'space-x-4'
+          }`}
+          style={{
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {DAYS_OF_WEEK.map((dayOfWeek, index) => (
             <div
               key={dayOfWeek}
-              className="flex-none w-80 snap-start mr-4 last:mr-0"
+              className={`flex-none snap-start ${
+                compactView 
+                  ? 'w-48' // Compact: ~3 days visible
+                  : 'w-80' // Normal: ~1.5 days visible
+              } ${index === DAYS_OF_WEEK.length - 1 ? '' : 'mr-4'}`}
             >
               <DayColumn
                 dayOfWeek={dayOfWeek}
@@ -180,23 +284,56 @@ export function MealPlanView({ className = '' }: MealPlanViewProps) {
                 onAddMeal={(mealType: MealType) => handleAddMeal(dayOfWeek, mealType)}
                 isToday={isToday(dayOfWeek)}
                 className="h-full"
+                compact={compactView}
               />
             </div>
           ))}
         </div>
         
-        {/* Day Indicators */}
-        <div className="flex justify-center space-x-2 mt-4">
-          {DAYS_OF_WEEK.map((dayOfWeek) => (
-            <div
-              key={dayOfWeek}
-              className={`w-2 h-2 rounded-full ${
-                isToday(dayOfWeek) 
-                  ? 'bg-blue-500' 
-                  : 'bg-gray-300'
-              }`}
-            />
-          ))}
+        {/* Enhanced Day Indicators */}
+        <div className="flex justify-center items-center space-x-3 mt-4">
+          {DAYS_OF_WEEK.map((dayOfWeek, index) => {
+            const isCurrentDay = index === currentDayIndex;
+            const isTodayDay = isToday(dayOfWeek);
+            
+            return (
+              <button
+                key={dayOfWeek}
+                onClick={() => scrollToDay(index)}
+                className={`relative transition-all duration-200 ${
+                  isCurrentDay ? 'transform scale-125' : 'hover:scale-110'
+                }`}
+                aria-label={`Go to ${DAY_LABELS[dayOfWeek]}`}
+              >
+                <div
+                  className={`w-3 h-3 rounded-full transition-colors duration-200 ${
+                    isTodayDay
+                      ? 'bg-blue-500 ring-2 ring-blue-200'
+                      : isCurrentDay
+                      ? 'bg-gray-600'
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                />
+                {/* Day label for current day */}
+                {isCurrentDay && (
+                  <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-600">
+                    {DAY_LABELS[dayOfWeek]}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Current day info */}
+        <div className="text-center mt-8 mb-4">
+          <p className="text-sm text-gray-500">
+            Viewing {DAY_LABELS[DAYS_OF_WEEK[currentDayIndex]]} • 
+            {getDateForDay(DAYS_OF_WEEK[currentDayIndex]).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            })}
+          </p>
         </div>
       </div>
 

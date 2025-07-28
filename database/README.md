@@ -7,18 +7,23 @@
 2. Select your project: `zgxhwqvmbhpdvegqqndk`
 3. Navigate to **SQL Editor** in the left sidebar
 
-### Step 2: Run the Migration Script
+### Step 2: Run the Migration Scripts
 1. Click **"New Query"** in the SQL Editor
 2. Copy the entire contents of `migrations/001_initial_schema.sql`
 3. Paste it into the SQL Editor
 4. Click **"Run"** to execute the script
+5. **Run the second migration**: Copy the contents of `migrations/002_add_recipe_fields.sql`
+6. Paste it into a new query and click **"Run"**
 
 ### Step 3: Verify Setup
-After running the script, you should see:
+After running both scripts, you should see:
 - ✅ 6 tables created (households, users, recipes, meal_plans, planned_meals, meal_plan_shares)
+- ✅ Enhanced recipes table with categorization fields
+- ✅ Enhanced planned_meals table with serving sizes and batch cooking
 - ✅ All indexes created for performance
 - ✅ Row Level Security (RLS) policies enabled
 - ✅ Database functions and triggers created
+- ✅ Auto-categorization system for recipes
 - ✅ Sample household data inserted
 
 ### Step 4: Test Connection

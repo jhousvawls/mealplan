@@ -9,43 +9,28 @@ import type {
 } from '../types';
 
 export class MealPlanService {
-  // Helper to check if we're in development mode with dummy user
-  private isDummyUser(userId: string): boolean {
-    return userId === 'dummy-user-123';
+  // Helper to convert day name to integer (0=Monday, 6=Sunday)
+  private dayToInt(day: DayOfWeek): number {
+    const dayMap: Record<DayOfWeek, number> = {
+      'monday': 0,
+      'tuesday': 1,
+      'wednesday': 2,
+      'thursday': 3,
+      'friday': 4,
+      'saturday': 5,
+      'sunday': 6,
+    };
+    return dayMap[day];
   }
 
-  // Development storage helpers
-  private getLocalMealPlans(): MealPlan[] {
-    const stored = localStorage.getItem('dev-meal-plans');
-    return stored ? JSON.parse(stored) : [];
-  }
-
-  private saveLocalMealPlans(mealPlans: MealPlan[]): void {
-    localStorage.setItem('dev-meal-plans', JSON.stringify(mealPlans));
+  // Helper to convert integer to day name
+  private intToDay(dayInt: number): DayOfWeek {
+    const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    return days[dayInt];
   }
 
   // Create a new meal plan
   async createMealPlan(data: CreateMealPlanData): Promise<MealPlan> {
-    // Use local storage for dummy user
-    if (this.isDummyUser(data.owner_id)) {
-      const mealPlan: MealPlan = {
-        id: `meal-plan-${Date.now()}`,
-        owner_id: data.owner_id,
-        plan_name: data.plan_name,
-        start_date: data.start_date,
-        grocery_list: [],
-        planned_meals: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const mealPlans = this.getLocalMealPlans();
-      mealPlans.unshift(mealPlan);
-      this.saveLocalMealPlans(mealPlans);
-      return mealPlan;
-    }
-
-    // Use Supabase for real users
     const { data: mealPlan, error } = await supabase
       .from('meal_plans')
       .insert({
@@ -66,12 +51,6 @@ export class MealPlanService {
 
   // Get all meal plans for the current user
   async getUserMealPlans(userId: string): Promise<MealPlan[]> {
-    // Use local storage for dummy user
-    if (this.isDummyUser(userId)) {
-      return this.getLocalMealPlans();
-    }
-
-    // Use Supabase for real users
     const { data: mealPlans, error } = await supabase
       .from('meal_plans')
       .select(`
@@ -114,11 +93,6 @@ export class MealPlanService {
 
   // Get meal plan for a specific week
   async getMealPlanForWeek(userId: string, startDate: string): Promise<MealPlan | null> {
-    if (this.isDummyUser(userId)) {
-      const mealPlans = this.getLocalMealPlans();
-      return mealPlans.find(plan => plan.start_date === startDate) || null;
-    }
-
     const { data: mealPlans, error } = await supabase
       .from('meal_plans')
       .select(`

@@ -8,9 +8,10 @@ interface MealCardProps {
   meal: PlannedMeal;
   dayOfWeek: DayOfWeek;
   className?: string;
+  compact?: boolean;
 }
 
-export function MealCard({ meal, dayOfWeek, className = '' }: MealCardProps) {
+export function MealCard({ meal, dayOfWeek, className = '', compact = false }: MealCardProps) {
   const [showActions, setShowActions] = useState(false);
   const removeMealMutation = useRemoveMealFromPlan();
 
@@ -43,6 +44,87 @@ export function MealCard({ meal, dayOfWeek, className = '' }: MealCardProps) {
     return meal.recipe?.prep_time || null;
   };
 
+  if (compact) {
+    // Compact version - minimal design for small spaces
+    return (
+      <div className={`meal-card relative ${className}`}>
+        <div className="bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center p-2 space-x-2">
+            {/* Small Recipe Image */}
+            <img
+              src={getRecipeImage()}
+              alt={getRecipeName()}
+              className="w-8 h-8 object-cover rounded flex-shrink-0"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/api/placeholder/150/100';
+              }}
+            />
+            
+            {/* Recipe Name */}
+            <div className="flex-1 min-w-0">
+              <h5 className="font-medium text-gray-900 text-xs truncate">
+                {getRecipeName()}
+              </h5>
+              {getPrepTime() && (
+                <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                  <ClockIcon className="h-2.5 w-2.5 mr-1" />
+                  <span className="truncate">{getPrepTime()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Compact Actions Menu */}
+            <button
+              onClick={() => setShowActions(!showActions)}
+              className="p-1 text-gray-400 hover:text-gray-600 rounded"
+            >
+              <EllipsisVerticalIcon className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Actions Dropdown */}
+          {showActions && (
+            <div className="absolute top-8 right-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-28">
+              <div className="py-1">
+                <button
+                  onClick={handleViewRecipe}
+                  className="w-full px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-50"
+                >
+                  View
+                </button>
+                <button
+                  onClick={handleDuplicateMeal}
+                  className="w-full px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center"
+                >
+                  <DocumentDuplicateIcon className="h-3 w-3 mr-1" />
+                  Copy
+                </button>
+                <button
+                  onClick={handleRemoveMeal}
+                  disabled={removeMealMutation.isPending}
+                  className="w-full px-2 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 flex items-center disabled:opacity-50"
+                >
+                  <TrashIcon className="h-3 w-3 mr-1" />
+                  {removeMealMutation.isPending ? 'Removing...' : 'Remove'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Click outside to close actions */}
+        {showActions && (
+          <div
+            className="fixed inset-0 z-0"
+            onClick={() => setShowActions(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Full version - original design
   return (
     <div className={`meal-card relative ${className}`}>
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
