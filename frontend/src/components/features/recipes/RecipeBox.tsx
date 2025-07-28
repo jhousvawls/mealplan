@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Link2 } from 'lucide-react';
-import { useRecipes } from '../../../hooks/useRecipes';
+import { Plus, Search, Filter, Link2, Grid, List, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { useRecipes, useDeleteRecipe } from '../../../hooks/useRecipesQuery';
 import { RecipeImportModal } from './RecipeImportModal';
 import Button from '../../ui/Button';
-import type { Recipe } from '../../../types';
+import type { Recipe, CUISINE_TYPES, RECIPE_CATEGORIES } from '../../../types';
 
 export const RecipeBox: React.FC = () => {
-  const { recipes, loading, error, importRecipeFromUrl } = useRecipes();
+  const { data: recipes = [], isLoading, error } = useRecipes();
   const [showImportModal, setShowImportModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState<string>('');
 
   const cuisines = ['Italian', 'Mexican', 'Asian', 'Grill', 'American', 'Mediterranean'];
 
-  const filteredRecipes = recipes.filter(recipe => {
+  const filteredRecipes = recipes.filter((recipe: Recipe) => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.ingredients.some(ing => ing.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      recipe.ingredients.some((ing: any) => ing.name.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCuisine = !selectedCuisine || recipe.cuisine === selectedCuisine;
     return matchesSearch && matchesCuisine;
   });
@@ -25,7 +25,7 @@ export const RecipeBox: React.FC = () => {
     // The useRecipes hook will automatically update the recipes list
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -87,12 +87,12 @@ export const RecipeBox: React.FC = () => {
       {/* Error State */}
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-300">{error}</p>
+          <p className="text-red-700 dark:text-red-300">{error.message}</p>
         </div>
       )}
 
       {/* Empty State */}
-      {!loading && recipes.length === 0 && (
+      {!isLoading && recipes.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
             <Link2 className="w-8 h-8 text-gray-400" />
@@ -120,7 +120,7 @@ export const RecipeBox: React.FC = () => {
       )}
 
       {/* No Results */}
-      {!loading && recipes.length > 0 && filteredRecipes.length === 0 && (
+      {!isLoading && recipes.length > 0 && filteredRecipes.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-600 dark:text-gray-400">
             No recipes match your search criteria
@@ -133,7 +133,6 @@ export const RecipeBox: React.FC = () => {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onSuccess={handleImportSuccess}
-        importRecipeFromUrl={importRecipeFromUrl}
       />
     </div>
   );

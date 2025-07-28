@@ -68,6 +68,7 @@ export interface CreateRecipeData {
   featured_image?: string;
   image_alt_text?: string;
   owner_id: string;
+  tags?: string[];
 }
 
 export interface UpdateRecipeData {
@@ -78,7 +79,50 @@ export interface UpdateRecipeData {
   prep_time?: string;
   cuisine?: string;
   estimated_nutrition?: NutritionInfo;
+  featured_image?: string;
+  image_alt_text?: string;
+  tags?: string[];
 }
+
+// Recipe filtering and search types
+export interface RecipeFilters {
+  cuisine?: string;
+  tags?: string[];
+  prepTime?: string;
+  searchQuery?: string;
+}
+
+export interface RecipeCategory {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+}
+
+// Predefined recipe categories
+export const RECIPE_CATEGORIES: RecipeCategory[] = [
+  { id: 'breakfast', name: 'Breakfast', color: 'bg-orange-100 text-orange-800' },
+  { id: 'lunch', name: 'Lunch', color: 'bg-green-100 text-green-800' },
+  { id: 'dinner', name: 'Dinner', color: 'bg-blue-100 text-blue-800' },
+  { id: 'dessert', name: 'Dessert', color: 'bg-pink-100 text-pink-800' },
+  { id: 'snack', name: 'Snack', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'appetizer', name: 'Appetizer', color: 'bg-purple-100 text-purple-800' },
+  { id: 'quick', name: 'Quick & Easy', color: 'bg-red-100 text-red-800' },
+  { id: 'healthy', name: 'Healthy', color: 'bg-emerald-100 text-emerald-800' },
+  { id: 'comfort', name: 'Comfort Food', color: 'bg-amber-100 text-amber-800' },
+  { id: 'vegetarian', name: 'Vegetarian', color: 'bg-lime-100 text-lime-800' },
+  { id: 'vegan', name: 'Vegan', color: 'bg-teal-100 text-teal-800' },
+  { id: 'gluten-free', name: 'Gluten Free', color: 'bg-cyan-100 text-cyan-800' },
+];
+
+// Cuisine types
+export const CUISINE_TYPES = [
+  'American', 'Italian', 'Mexican', 'Chinese', 'Japanese', 'Indian', 'Thai', 
+  'French', 'Mediterranean', 'Greek', 'Korean', 'Vietnamese', 'Spanish', 
+  'Middle Eastern', 'German', 'British', 'Brazilian', 'Moroccan', 'Other'
+] as const;
+
+export type CuisineType = typeof CUISINE_TYPES[number];
 
 // Recipe parsing from URL types
 export interface ParsedRecipeData {

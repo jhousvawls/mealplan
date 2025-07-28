@@ -163,18 +163,49 @@ export class RecipeService {
     return recipes || [];
   }
 
+  // Parse recipe from URL using backend API
+  async parseRecipeFromUrl(url: string): Promise<any> {
+    try {
+      const response = await fetch('http://localhost:3001/api/recipes/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: url.trim(),
+          options: {
+            includeImages: true,
+            maxImages: 10,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to parse recipe`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to parse recipe from URL');
+    }
+  }
+
   // Import recipe from URL
   async importRecipeFromUrl(url: string, userId: string): Promise<Recipe> {
     try {
-      // For development, use mock data from static file
-      // In production, this would call a real recipe parsing API
-      const response = await fetch('/api/parse-recipe.json');
-
-      if (!response.ok) {
+      // Parse recipe using backend API
+      const parsedData = await this.parseRecipeFromUrl(url);
+      
+      if (!parsedData.success || !parsedData.recipe) {
         throw new Error('Failed to parse recipe from URL');
       }
 
-      const parsedRecipe = await response.json();
+      const parsedRecipe = parsedData.recipe;
 
       // Create the recipe in the database
       const recipeData: CreateRecipeData = {
@@ -184,7 +215,9 @@ export class RecipeService {
         source_url: url,
         prep_time: parsedRecipe.prep_time,
         cuisine: parsedRecipe.cuisine,
-        estimated_nutrition: parsedRecipe.nutrition,
+        estimated_nutrition: parsedRecipe.estimated_nutrition,
+        featured_image: parsedRecipe.images?.[0]?.url,
+        image_alt_text: parsedRecipe.images?.[0]?.alt_text,
         owner_id: userId,
       };
 
@@ -192,6 +225,27 @@ export class RecipeService {
     } catch (error) {
       throw new Error(`Failed to import recipe: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  // Check for duplicate recipes by URL
+  async checkDuplicateRecipe(userId: string, sourceUrl: string): Promise<Recipe | null> {
+    if (this.isDummyUser(userId)) {
+      const recipes = this.getLocalRecipes();
+      return recipes.find(recipe => recipe.source_url === sourceUrl) || null;
+    }
+
+    const { data: recipes, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('owner_id', userId)
+      .eq('source_url', sourceUrl)
+      .limit(1);
+
+    if (error) {
+      throw new Error(`Failed to check for duplicates: ${error.message}`);
+    }
+
+    return recipes?.[0] || null;
   }
 }
 

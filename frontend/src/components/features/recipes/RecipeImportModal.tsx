@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Link, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useRecipes } from '../../../hooks/useRecipes';
+import { useParseRecipe, useImportRecipe, useCheckDuplicate } from '../../../hooks/useRecipesQuery';
 import Button from '../../ui/Button';
 import { ImageSelectionModal } from './ImageSelectionModal';
 import type { RecipeImage } from '../../../types';
@@ -9,68 +9,55 @@ interface RecipeImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (recipe: any) => void;
-  importRecipeFromUrl?: (url: string) => Promise<any>;
 }
 
 export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  importRecipeFromUrl: importFromUrl,
 }) => {
   const [url, setUrl] = useState('');
-  const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [parsedRecipeData, setParsedRecipeData] = useState<any>(null);
   const [availableImages, setAvailableImages] = useState<RecipeImage[]>([]);
   const [showImageSelection, setShowImageSelection] = useState(false);
-  const { importRecipeFromUrl: fallbackImport } = useRecipes();
   
-  // Use the passed function or fallback to hook
-  const importRecipeFromUrl = importFromUrl || fallbackImport;
+  const parseRecipe = useParseRecipe();
+  const importRecipe = useImportRecipe();
+  const checkDuplicate = useCheckDuplicate();
+  
+  const isImporting = parseRecipe.isPending || importRecipe.isPending || checkDuplicate.isPending;
 
   const handleImport = async () => {
     if (!url.trim()) return;
 
-    setIsImporting(true);
     setImportStatus('idle');
     setErrorMessage('');
 
     try {
-      // Parse the recipe using the backend API
-      const response = await fetch('http://localhost:3001/api/recipes/parse', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          options: {
-            includeImages: true,
-            maxImages: 10,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to parse recipe from URL');
+      // First check for duplicates
+      const duplicate = await checkDuplicate.mutateAsync(url.trim());
+      if (duplicate) {
+        setImportStatus('error');
+        setErrorMessage('This recipe has already been imported to your collection.');
+        return;
       }
 
-      const result = await response.json();
+      // Parse the recipe using the backend API
+      const result = await parseRecipe.mutateAsync(url.trim());
       
-      if (!result.success) {
+      if (!result.success || !result.recipe) {
         throw new Error(result.error || 'Failed to parse recipe');
       }
 
-      const parsedData = result.data;
+      const parsedData = result.recipe;
       setParsedRecipeData(parsedData);
       
       // Check if there are images to choose from
-      if (parsedData.available_images && parsedData.available_images.length > 0) {
-        setAvailableImages(parsedData.available_images);
+      if (result.images && result.images.length > 0) {
+        setAvailableImages(result.images);
         setShowImageSelection(true);
-        setIsImporting(false);
       } else {
         // No images available, proceed with import
         await finalizeImport(parsedData, undefined, undefined);
@@ -78,36 +65,13 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     } catch (error) {
       setImportStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Failed to import recipe');
-      setIsImporting(false);
     }
   };
 
   const finalizeImport = async (recipeData: any, selectedImageUrl?: string, imageAltText?: string) => {
     try {
-      setIsImporting(true);
+      const recipe = await importRecipe.mutateAsync(url.trim());
       
-      // Create recipe data with selected image
-      const recipeToCreate = {
-        name: recipeData.name,
-        ingredients: recipeData.ingredients,
-        instructions: recipeData.instructions,
-        source_url: url.trim(),
-        prep_time: recipeData.prep_time,
-        cuisine: recipeData.cuisine,
-        estimated_nutrition: recipeData.nutrition,
-        featured_image: selectedImageUrl,
-        image_alt_text: imageAltText,
-      };
-
-      const recipe = await importRecipeFromUrl(url.trim());
-      
-      // Update the recipe with image data if we have it
-      if (recipe && selectedImageUrl) {
-        // For now, we'll just log this - in a real implementation,
-        // we'd update the recipe with the selected image
-        console.log('Recipe created with image:', selectedImageUrl);
-      }
-
       if (recipe) {
         setImportStatus('success');
         onSuccess?.(recipe);
@@ -121,8 +85,6 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     } catch (error) {
       setImportStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Failed to import recipe');
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -133,14 +95,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
 
   const handleImageSelectionClose = () => {
     setShowImageSelection(false);
-    setIsImporting(false);
     setParsedRecipeData(null);
     setAvailableImages([]);
   };
 
   const handleClose = () => {
     setUrl('');
-    setIsImporting(false);
     setImportStatus('idle');
     setErrorMessage('');
     onClose();
