@@ -9,6 +9,7 @@ import AuthCallback from './components/features/auth/AuthCallback';
 import ProtectedRoute from './components/features/auth/ProtectedRoute';
 import { RecipeBox } from './components/features/recipes/RecipeBox';
 import { MealPlanView } from './components/features/meal-planning';
+import { GroceryListView } from './components/features/grocery/GroceryListView';
 
 function App() {
   return (
@@ -57,7 +58,7 @@ function App() {
               <Route path="/groceries" element={
                 <ProtectedRoute>
                   <Layout>
-                    <ComingSoon title="Grocery Lists" description="Manage your grocery shopping lists" />
+                    <GroceryListView />
                   </Layout>
                 </ProtectedRoute>
               } />

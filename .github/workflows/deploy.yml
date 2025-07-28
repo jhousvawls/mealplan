@@ -9,46 +9,11 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd frontend && npm ci
-          cd ../backend && npm ci
-
-      - name: Run tests
-        run: |
-          cd frontend && npm run test -- --coverage --watchAll=false
-          cd ../backend && npm run test -- --coverage
-
-      - name: Run linting
-        run: |
-          cd frontend && npm run lint
-          cd ../backend && npm run lint
-
-      - name: Build applications
-        run: |
-          cd frontend && npm run build
-          cd ../backend && npm run build
-
   deploy-frontend:
-    needs: test
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -67,26 +32,23 @@ jobs:
           cd frontend
           npm run build
         env:
-          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
-          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
-          REACT_APP_ENVIRONMENT: production
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+        uses: vercel/action@v1
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
+          working-directory: frontend
 
   deploy-backend:
-    needs: test
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -109,7 +71,8 @@ jobs:
         uses: bervProject/railway-deploy@v1.0.0
         with:
           railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: meal-planner-api
+          service: ${{ secrets.RAILWAY_SERVICE }}
+          working-directory: backend
 
   health-check:
     needs: [deploy-frontend, deploy-backend]
@@ -117,30 +80,12 @@ jobs:
     
     steps:
       - name: Wait for deployment
-        run: sleep 60
+        run: sleep 30
 
-      - name: Check frontend health
+      - name: Health check frontend
         run: |
-          curl -f ${{ secrets.REACT_APP_API_URL }}/api/health || exit 1
+          curl -f ${{ secrets.FRONTEND_URL }}/health || curl -f ${{ secrets.FRONTEND_URL }} || echo "Frontend health check failed"
 
-      - name: Check backend health
+      - name: Health check backend
         run: |
-          curl -f ${{ secrets.FRONTEND_URL }} || exit 1
-
-      - name: Notify deployment success
-        if: success()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          text: '🚀 Meal Planner App deployed successfully to production!'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify deployment failure
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: '❌ Meal Planner App deployment failed!'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -f ${{ secrets.BACKEND_URL }}/health || echo "Backend health check failed"

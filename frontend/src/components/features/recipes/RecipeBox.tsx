@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Link2, Grid, List, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Link2, Grid, List, MoreVertical, Edit, Trash2, ChevronDownIcon } from 'lucide-react';
 import { useRecipes, useDeleteRecipe } from '../../../hooks/useRecipesQuery';
 import { RecipeImportModal } from './RecipeImportModal';
+import { ManualRecipeForm } from './ManualRecipeForm';
+import { FavoriteButton, useFavoriteToggle } from './FavoriteButton';
 import Button from '../../ui/Button';
 import type { Recipe, CUISINE_TYPES, RECIPE_CATEGORIES } from '../../../types';
 
 export const RecipeBox: React.FC = () => {
   const { data: recipes = [], isLoading, error } = useRecipes();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState<string>('');
 
@@ -45,13 +49,53 @@ export const RecipeBox: React.FC = () => {
             {recipes.length} recipes saved
           </p>
         </div>
-        <Button
-          onClick={() => setShowImportModal(true)}
-          className="flex items-center space-x-2"
-        >
-          <Link2 className="w-4 h-4" />
-          <span>Import Recipe</span>
-        </Button>
+        
+        {/* Add Recipe Dropdown */}
+        <div className="relative">
+          <Button
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Recipe</span>
+            <ChevronDownIcon className="w-4 h-4" />
+          </Button>
+          
+          {showAddDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setShowImportModal(true);
+                    setShowAddDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                >
+                  <Link2 className="w-4 h-4" />
+                  <span>Import from URL</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowManualForm(true);
+                    setShowAddDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Create Manually</span>
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Click outside to close dropdown */}
+          {showAddDropdown && (
+            <div
+              className="fixed inset-0 z-0"
+              onClick={() => setShowAddDropdown(false)}
+            />
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -134,6 +178,23 @@ export const RecipeBox: React.FC = () => {
         onClose={() => setShowImportModal(false)}
         onSuccess={handleImportSuccess}
       />
+
+      {/* Manual Recipe Form Modal */}
+      {showManualForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <ManualRecipeForm
+                onSuccess={(recipe) => {
+                  handleImportSuccess(recipe);
+                  setShowManualForm(false);
+                }}
+                onCancel={() => setShowManualForm(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -145,6 +206,19 @@ interface RecipeCardProps {
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   const [imageError, setImageError] = useState(false);
+  const { toggleFavorite } = useFavoriteToggle();
+  
+  // For MVP, we'll simulate favorite status (in real app, this would come from user preferences)
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const handleFavoriteToggle = async (recipeId: string, newFavoriteState: boolean) => {
+    try {
+      await toggleFavorite(recipeId, newFavoriteState);
+      setIsFavorite(newFavoriteState);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
@@ -217,13 +291,25 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         </div>
 
         {/* Actions */}
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" className="flex-1">
-            View Recipe
-          </Button>
-          <Button variant="ghost" size="sm">
-            ⋯
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-2 flex-1">
+            <Button variant="outline" size="sm" className="flex-1">
+              View Recipe
+            </Button>
+            <Button variant="ghost" size="sm">
+              ⋯
+            </Button>
+          </div>
+          
+          {/* Favorite Button */}
+          <div className="ml-2">
+            <FavoriteButton
+              recipeId={recipe.id}
+              isFavorite={isFavorite}
+              onToggle={handleFavoriteToggle}
+              size="md"
+            />
+          </div>
         </div>
       </div>
     </div>
