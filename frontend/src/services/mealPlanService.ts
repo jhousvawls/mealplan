@@ -5,7 +5,9 @@ import type {
   CreateMealPlanData, 
   MealPlanTemplate,
   DayOfWeek,
-  MealType 
+  MealType,
+  RecipeUsageAnalysis,
+  WeeklyAnalysis
 } from '../types';
 
 export class MealPlanService {
@@ -350,6 +352,169 @@ export class MealPlanService {
     }
     
     return mealPlan;
+  }
+
+  // Phase 2 Week 2: Recipe Usage Analysis
+  async getRecipeUsageAnalysis(mealPlanId: string): Promise<RecipeUsageAnalysis[]> {
+    const mealPlan = await this.getMealPlan(mealPlanId);
+    
+    if (!mealPlan.planned_meals) return [];
+
+    // Group meals by recipe
+    const recipeUsageMap = new Map<string, {
+      recipe: any;
+      meals: PlannedMeal[];
+    }>();
+
+    mealPlan.planned_meals.forEach(meal => {
+      if (!meal.recipe) return;
+      
+      const existing = recipeUsageMap.get(meal.recipe_id);
+      if (existing) {
+        existing.meals.push(meal);
+      } else {
+        recipeUsageMap.set(meal.recipe_id, {
+          recipe: meal.recipe,
+          meals: [meal]
+        });
+      }
+    });
+
+    // Convert to analysis format
+    const usageAnalysis: RecipeUsageAnalysis[] = [];
+    
+    for (const [recipeId, { recipe, meals }] of recipeUsageMap) {
+      const analysis: RecipeUsageAnalysis = {
+        recipeId,
+        recipeName: recipe.name,
+        usageCount: meals.length,
+        isBatchCookCandidate: meals.length >= 3,
+        mealSlots: meals.map(meal => ({
+          dayOfWeek: meal.day_of_week,
+          mealType: meal.meal_type,
+          servingSize: 1, // Default serving size
+          plannedMealId: meal.id
+        })),
+        householdPreferences: {
+          isFavorite: false, // TODO: Implement household preferences
+          isKidsApproved: false,
+          preferredBy: []
+        },
+        nutritionalContribution: {
+          primaryVegetables: this.extractVegetables(recipe.ingredients || []),
+          cuisineType: recipe.cuisine || 'Other',
+          healthScore: this.calculateHealthScore(recipe)
+        }
+      };
+      
+      usageAnalysis.push(analysis);
+    }
+
+    return usageAnalysis.sort((a, b) => b.usageCount - a.usageCount);
+  }
+
+  // Get weekly analysis with variety warnings and suggestions
+  async getWeeklyAnalysis(mealPlanId: string): Promise<WeeklyAnalysis> {
+    const recipeUsage = await this.getRecipeUsageAnalysis(mealPlanId);
+    
+    // Analyze cuisine variety
+    const cuisineCount = new Map<string, number>();
+    const cuisineByDay = new Map<string, Set<string>>();
+    
+    recipeUsage.forEach(usage => {
+      const cuisine = usage.nutritionalContribution.cuisineType;
+      cuisineCount.set(cuisine, (cuisineCount.get(cuisine) || 0) + usage.usageCount);
+      
+      usage.mealSlots.forEach(slot => {
+        if (!cuisineByDay.has(slot.dayOfWeek)) {
+          cuisineByDay.set(slot.dayOfWeek, new Set());
+        }
+        cuisineByDay.get(slot.dayOfWeek)!.add(cuisine);
+      });
+    });
+
+    // Check for cuisine repetition (same cuisine 3+ days)
+    const cuisineRepetition: Array<{ cuisine: string; dayCount: number }> = [];
+    for (const [cuisine, count] of cuisineCount) {
+      if (count >= 3 && cuisine !== 'Other') {
+        const dayCount = Array.from(cuisineByDay.values())
+          .filter(daySet => daySet.has(cuisine)).length;
+        cuisineRepetition.push({ cuisine, dayCount });
+      }
+    }
+
+    // Check vegetable content
+    const totalVegetables = recipeUsage.reduce((total, usage) => 
+      total + usage.nutritionalContribution.primaryVegetables.length, 0
+    );
+    const vegetableDeficiency = totalVegetables < recipeUsage.length * 0.5; // Less than 0.5 vegetables per recipe
+
+    // Batch cooking opportunities
+    const batchCookOpportunities = recipeUsage
+      .filter(usage => usage.isBatchCookCandidate)
+      .map(usage => usage.recipeName);
+
+    return {
+      varietyWarnings: {
+        cuisineRepetition,
+        proteinImbalance: false, // TODO: Implement protein analysis
+        vegetableDeficiency
+      },
+      suggestions: {
+        addVegetables: vegetableDeficiency,
+        diversifyCuisine: cuisineRepetition.map(cr => cr.cuisine),
+        batchCookOpportunities
+      },
+      recipeUsage
+    };
+  }
+
+  // Helper: Extract vegetables from ingredients
+  private extractVegetables(ingredients: any[]): string[] {
+    const vegetableKeywords = [
+      'tomato', 'onion', 'garlic', 'carrot', 'celery', 'pepper', 'spinach',
+      'broccoli', 'cauliflower', 'zucchini', 'mushroom', 'lettuce', 'cucumber',
+      'avocado', 'corn', 'peas', 'beans', 'kale', 'cabbage', 'potato'
+    ];
+    
+    const vegetables: string[] = [];
+    ingredients.forEach(ingredient => {
+      const name = ingredient.name.toLowerCase();
+      vegetableKeywords.forEach(veggie => {
+        if (name.includes(veggie) && !vegetables.includes(veggie)) {
+          vegetables.push(veggie);
+        }
+      });
+    });
+    
+    return vegetables;
+  }
+
+  // Helper: Calculate basic health score
+  private calculateHealthScore(recipe: any): number {
+    let score = 50; // Base score
+    
+    if (!recipe.ingredients) return score;
+    
+    const ingredients = recipe.ingredients.map((i: any) => i.name.toLowerCase());
+    
+    // Positive factors
+    const healthyKeywords = ['vegetable', 'fruit', 'whole grain', 'lean', 'olive oil', 'quinoa'];
+    const unhealthyKeywords = ['fried', 'butter', 'cream', 'sugar', 'processed'];
+    
+    healthyKeywords.forEach(keyword => {
+      if (ingredients.some((ing: string) => ing.includes(keyword))) {
+        score += 10;
+      }
+    });
+    
+    unhealthyKeywords.forEach(keyword => {
+      if (ingredients.some((ing: string) => ing.includes(keyword))) {
+        score -= 10;
+      }
+    });
+    
+    return Math.max(0, Math.min(100, score));
   }
 }
 

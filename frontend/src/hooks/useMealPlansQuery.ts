@@ -6,7 +6,9 @@ import type {
   CreateMealPlanData, 
   MealPlanTemplate,
   DayOfWeek,
-  MealType 
+  MealType,
+  RecipeUsageAnalysis,
+  WeeklyAnalysis
 } from '../types';
 
 // Query keys
@@ -19,6 +21,9 @@ export const mealPlanKeys = {
   week: (userId: string, startDate: string) => [...mealPlanKeys.all, 'week', userId, startDate] as const,
   currentWeek: (userId: string) => [...mealPlanKeys.all, 'current-week', userId] as const,
   templates: () => [...mealPlanKeys.all, 'templates'] as const,
+  // Phase 2 Week 2: Recipe usage analysis
+  recipeUsage: (mealPlanId: string) => [...mealPlanKeys.all, 'recipe-usage', mealPlanId] as const,
+  weeklyAnalysis: (mealPlanId: string) => [...mealPlanKeys.all, 'weekly-analysis', mealPlanId] as const,
 };
 
 // Get all meal plans for a user
@@ -267,5 +272,29 @@ export function useGetOrCreateCurrentWeekMealPlan() {
       // Invalidate the list to ensure it includes the new plan
       queryClient.invalidateQueries({ queryKey: mealPlanKeys.list(mealPlan.owner_id) });
     },
+  });
+}
+
+// Phase 2 Week 2: Recipe Usage Analysis Hooks
+
+// Get recipe usage analysis for a meal plan
+export function useRecipeUsageAnalysis(mealPlanId: string) {
+  return useQuery({
+    queryKey: mealPlanKeys.recipeUsage(mealPlanId),
+    queryFn: () => mealPlanService.getRecipeUsageAnalysis(mealPlanId),
+    enabled: !!mealPlanId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+// Get weekly analysis with variety warnings and suggestions
+export function useWeeklyAnalysis(mealPlanId: string) {
+  return useQuery({
+    queryKey: mealPlanKeys.weeklyAnalysis(mealPlanId),
+    queryFn: () => mealPlanService.getWeeklyAnalysis(mealPlanId),
+    enabled: !!mealPlanId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }

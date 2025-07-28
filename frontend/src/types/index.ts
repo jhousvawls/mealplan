@@ -277,3 +277,130 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
+
+// Phase 2 Week 2: Multiple Assignment Indicators & Filter Persistence Types
+
+export interface RecipeUsageAnalysis {
+  recipeId: string;
+  recipeName: string;
+  usageCount: number;
+  isBatchCookCandidate: boolean; // 3+ uses
+  mealSlots: Array<{
+    dayOfWeek: DayOfWeek;
+    mealType: MealType;
+    servingSize: number;
+    plannedMealId: string;
+  }>;
+  householdPreferences: {
+    isFavorite: boolean;
+    isKidsApproved: boolean;
+    preferredBy: string[]; // user names
+  };
+  nutritionalContribution: {
+    primaryVegetables: string[];
+    cuisineType: string;
+    healthScore: number;
+  };
+}
+
+export interface WeeklyAnalysis {
+  varietyWarnings: {
+    cuisineRepetition: Array<{ cuisine: string; dayCount: number }>;
+    proteinImbalance: boolean;
+    vegetableDeficiency: boolean;
+  };
+  suggestions: {
+    addVegetables: boolean;
+    diversifyCuisine: string[];
+    batchCookOpportunities: string[];
+  };
+  recipeUsage: RecipeUsageAnalysis[];
+}
+
+export interface FilterState {
+  persistent: {
+    dietaryRestrictions: string[];
+    cuisinePreferences: string[];
+    difficultyPreference: string;
+    prepTimePreference: string;
+  };
+  session: {
+    searchQuery: string;
+    availableIngredients: string[];
+    quickFilters: string[];
+  };
+  recent: {
+    searches: string[];
+    filterCombinations: FilterCombination[];
+  };
+}
+
+export interface FilterCombination {
+  id: string;
+  name: string;
+  filters: {
+    tags?: string[];
+    dietaryRestrictions?: string[];
+    cuisine?: string;
+    difficulty?: string;
+    prepTimeCategory?: string;
+  };
+  usageCount: number;
+  lastUsed: string;
+}
+
+export interface QuickFilter {
+  id: string;
+  label: string;
+  filters: {
+    tags?: string[];
+    dietaryRestrictions?: string[];
+    cuisine?: string;
+    difficulty?: string;
+    prepTimeCategory?: string;
+  };
+  icon?: string;
+}
+
+// Predefined quick filters
+export const QUICK_FILTERS: QuickFilter[] = [
+  {
+    id: 'quick-meals',
+    label: 'Quick (< 30 min)',
+    filters: { prepTimeCategory: 'quick' },
+    icon: '⚡'
+  },
+  {
+    id: 'vegetarian',
+    label: 'Vegetarian',
+    filters: { dietaryRestrictions: ['vegetarian'] },
+    icon: '🥬'
+  },
+  {
+    id: 'batch-cook',
+    label: 'Batch Cook',
+    filters: { tags: ['batch-cook'] },
+    icon: '👨‍🍳'
+  },
+  {
+    id: 'healthy',
+    label: 'Healthy',
+    filters: { tags: ['healthy'] },
+    icon: '💚'
+  },
+  {
+    id: 'comfort',
+    label: 'Comfort Food',
+    filters: { tags: ['comfort'] },
+    icon: '🏠'
+  }
+];
+
+export interface HouseholdPreference {
+  userId: string;
+  userName: string;
+  recipeId: string;
+  preferenceType: 'favorite' | 'kids-approved' | 'dislike';
+  notes?: string;
+  createdAt: string;
+}
