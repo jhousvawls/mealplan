@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   HomeIcon, 
   CalendarIcon, 
@@ -29,26 +30,23 @@ const navItems: NavItem[] = [
   { id: 'settings', icon: Cog6ToothIcon, label: 'Settings', path: '/settings' },
 ];
 
-// Mock user data - will be replaced with real auth later
-const mockUser = {
-  id: '1',
-  email: 'user@example.com',
-  full_name: 'John Doe',
-  avatar_url: null,
-};
-
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const handleSignOut = async () => {
-    // Mock sign out - will be replaced with real auth later
-    console.log('Sign out clicked');
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (
@@ -88,9 +86,9 @@ export default function Sidebar() {
         <div className="p-4 border-t border-border space-y-2">
           {/* User Info */}
           <div className="flex items-center p-3 rounded-lg">
-            {mockUser?.avatar_url ? (
+            {user?.user_metadata?.avatar_url ? (
               <img 
-                src={mockUser.avatar_url} 
+                src={user.user_metadata.avatar_url} 
                 alt="Avatar" 
                 className="w-8 h-8 rounded-full"
               />
@@ -98,7 +96,7 @@ export default function Sidebar() {
               <UserIcon className="w-6 h-6 text-text-secondary" />
             )}
             <span className="hidden md:inline ml-4 font-semibold text-text-primary">
-              {mockUser?.full_name || 'User'}
+              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
             </span>
           </div>
 

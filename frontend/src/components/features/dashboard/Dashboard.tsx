@@ -6,15 +6,11 @@ import CreatePlanCard from './CreatePlanCard';
 import SupabaseTest from '../../common/SupabaseTest';
 import type { MealPlan } from '../../../types';
 import { mockMealPlans } from '../../../utils/mockData';
-
-// Mock user data - will be replaced with real auth later
-const mockUser = {
-  id: '1',
-  full_name: 'John Doe',
-};
+import { useAuth } from '../../../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Using mock data for now - will be replaced with real API calls
   const mealPlans = mockMealPlans;
@@ -28,7 +24,8 @@ const Dashboard: React.FC = () => {
     navigate('/plan/create');
   };
 
-  const firstName = mockUser?.full_name?.split(' ')[0] || 'there';
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 
+                   user?.email?.split('@')[0] || 'there';
 
   return (
     <div>

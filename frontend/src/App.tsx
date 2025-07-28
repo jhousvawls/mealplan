@@ -1,27 +1,87 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
 import Dashboard from './components/features/dashboard/Dashboard';
 import ComingSoon from './components/common/ComingSoon';
+import LoginPage from './components/features/auth/LoginPage';
+import AuthCallback from './components/features/auth/AuthCallback';
+import ProtectedRoute from './components/features/auth/ProtectedRoute';
 
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <div className="bg-background-main min-h-screen font-sans text-text-primary">
-          <Layout>
+      <AuthProvider>
+        <Router>
+          <div className="bg-background-main min-h-screen font-sans text-text-primary">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/plan" element={<ComingSoon title="Meal Planning" description="Create and manage your weekly meal plans" />} />
-              <Route path="/plan/:id" element={<ComingSoon title="Meal Plan View" description="View and edit your meal plan" />} />
-              <Route path="/plan/create" element={<ComingSoon title="Create Meal Plan" description="Create a new meal plan" />} />
-              <Route path="/groceries" element={<ComingSoon title="Grocery Lists" description="Manage your grocery shopping lists" />} />
-              <Route path="/recipes" element={<ComingSoon title="Recipe Box" description="Store and organize your favorite recipes" />} />
-              <Route path="/settings" element={<ComingSoon title="Settings" description="Manage your account and preferences" />} />
+              {/* Public routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/plan" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Meal Planning" description="Create and manage your weekly meal plans" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/plan/:id" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Meal Plan View" description="View and edit your meal plan" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/plan/create" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Create Meal Plan" description="Create a new meal plan" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/groceries" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Grocery Lists" description="Manage your grocery shopping lists" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/recipes" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Recipe Box" description="Store and organize your favorite recipes" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ComingSoon title="Settings" description="Manage your account and preferences" />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+
+              {/* Catch all route - redirect to dashboard */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Layout>
-        </div>
-      </Router>
+          </div>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

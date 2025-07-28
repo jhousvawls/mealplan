@@ -18,66 +18,56 @@ The Meal Planner App helps users plan meals, manage recipes, generate grocery li
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
 - Supabase account
-- OpenAI API key
-- Google OAuth credentials
+- Google OAuth credentials (for authentication)
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd meal-planner-app
+git clone https://github.com/jhousvawls/mealplan.git
+cd mealplan
 ```
 
-2. Install dependencies:
+2. Install frontend dependencies:
 ```bash
-# Install frontend dependencies
 cd frontend
-npm install
-
-# Install backend dependencies
-cd ../backend
 npm install
 ```
 
 3. Environment Setup:
 ```bash
 # Frontend (frontend/.env.local)
-VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_URL=https://zgxhwqvmbhpdvegqqndk.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_API_URL=http://localhost:3001
-
-# Backend (backend/.env)
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_supabase_service_key
-OPENAI_API_KEY=your_openai_api_key
-PORT=3001
 ```
 
 **Important**: 
 - Copy `.env.example` to `frontend/.env.local` for frontend configuration
-- Copy `backend/.env.example` to `backend/.env` for backend configuration
-- Add your actual OpenAI API key to `backend/.env`
+- Add your actual Supabase credentials
 - Never commit `.env` files to version control
 
 4. Database Setup:
 ```bash
-# Run database migrations (see DATABASE.md)
-npm run db:migrate
+# Run the database migration in Supabase SQL Editor
+# Copy contents of database/migrations/001_initial_schema.sql
+# See database/README.md for detailed instructions
 ```
 
-5. Start Development Servers:
+5. Authentication Setup:
 ```bash
-# Terminal 1 - Backend
-cd backend
-npm run dev
+# Configure Google OAuth in Supabase Dashboard
+# See docs/AUTHENTICATION_SETUP.md for detailed instructions
+```
 
-# Terminal 2 - Frontend
+6. Start Development Server:
+```bash
 cd frontend
-npm start
+npm run dev
+# App will be available at http://localhost:5177/
 ```
 
 ## Project Structure
