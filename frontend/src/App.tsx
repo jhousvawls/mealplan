@@ -8,6 +8,7 @@ import LoginPage from './components/features/auth/LoginPage';
 import AuthCallback from './components/features/auth/AuthCallback';
 import ProtectedRoute from './components/features/auth/ProtectedRoute';
 import { RecipeBox } from './components/features/recipes/RecipeBox';
+import { MealPlanView } from './components/features/meal-planning';
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
               <Route path="/plan" element={
                 <ProtectedRoute>
                   <Layout>
-                    <ComingSoon title="Meal Planning" description="Create and manage your weekly meal plans" />
+                    <MealPlanView />
                   </Layout>
                 </ProtectedRoute>
               } />
@@ -40,7 +41,7 @@ function App() {
               <Route path="/plan/:id" element={
                 <ProtectedRoute>
                   <Layout>
-                    <ComingSoon title="Meal Plan View" description="View and edit your meal plan" />
+                    <MealPlanView />
                   </Layout>
                 </ProtectedRoute>
               } />
@@ -48,7 +49,7 @@ function App() {
               <Route path="/plan/create" element={
                 <ProtectedRoute>
                   <Layout>
-                    <ComingSoon title="Create Meal Plan" description="Create a new meal plan" />
+                    <MealPlanView />
                   </Layout>
                 </ProtectedRoute>
               } />

@@ -219,6 +219,8 @@ export class RecipeService {
         featured_image: parsedRecipe.images?.[0]?.url,
         image_alt_text: parsedRecipe.images?.[0]?.alt_text,
         owner_id: userId,
+        is_draft: true, // Save imported recipes as drafts initially
+        tags: [],
       };
 
       return await this.createRecipe(recipeData);

@@ -38,6 +38,13 @@ export interface Recipe {
   owner_id: string;
   created_at: string;
   updated_at: string;
+  // New categorization fields
+  meal_types?: MealType[];
+  dietary_restrictions?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  prep_time_category?: 'quick' | 'medium' | 'long';
+  tags?: string[];
+  is_draft?: boolean;
 }
 
 export interface Ingredient {
@@ -69,6 +76,11 @@ export interface CreateRecipeData {
   image_alt_text?: string;
   owner_id: string;
   tags?: string[];
+  meal_types?: MealType[];
+  dietary_restrictions?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  prep_time_category?: 'quick' | 'medium' | 'long';
+  is_draft?: boolean;
 }
 
 export interface UpdateRecipeData {
@@ -82,6 +94,11 @@ export interface UpdateRecipeData {
   featured_image?: string;
   image_alt_text?: string;
   tags?: string[];
+  meal_types?: MealType[];
+  dietary_restrictions?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  prep_time_category?: 'quick' | 'medium' | 'long';
+  is_draft?: boolean;
 }
 
 // Recipe filtering and search types
@@ -123,6 +140,15 @@ export const CUISINE_TYPES = [
 ] as const;
 
 export type CuisineType = typeof CUISINE_TYPES[number];
+
+// Dietary restrictions
+export const DIETARY_RESTRICTIONS = [
+  'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 
+  'egg-free', 'soy-free', 'keto', 'paleo', 'low-carb', 'low-fat', 
+  'low-sodium', 'diabetic-friendly', 'heart-healthy'
+] as const;
+
+export type DietaryRestriction = typeof DIETARY_RESTRICTIONS[number];
 
 // Recipe parsing from URL types
 export interface ParsedRecipeData {
@@ -169,6 +195,33 @@ export interface MealPlanShare {
   shared_with_user_id: string;
   can_edit: boolean;
   created_at: string;
+}
+
+// Meal Plan Templates
+export interface MealPlanTemplate {
+  id: string;
+  name: string;
+  description: string;
+  template_type: 'system' | 'user' | 'previous_week';
+  meals: TemplatedMeal[];
+  created_by?: string;
+  created_at: string;
+}
+
+export interface TemplatedMeal {
+  day_of_week: DayOfWeek;
+  meal_type: MealType;
+  recipe_id?: string;
+  recipe_name?: string;
+  notes?: string;
+}
+
+export interface CreateMealPlanData {
+  plan_name: string;
+  start_date: string;
+  template_id?: string;
+  copy_from_week?: string;
+  owner_id: string;
 }
 
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
