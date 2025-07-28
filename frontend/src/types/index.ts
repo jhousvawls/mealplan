@@ -16,6 +16,14 @@ export interface Household {
   created_at: string;
 }
 
+export interface RecipeImage {
+  url: string;
+  type: 'hero' | 'step' | 'ingredient' | 'gallery';
+  alt_text?: string;
+  dimensions?: { width: number; height: number };
+  quality_score?: number;
+}
+
 export interface Recipe {
   id: string;
   name: string;
@@ -25,6 +33,8 @@ export interface Recipe {
   prep_time?: string;
   cuisine?: string;
   estimated_nutrition?: NutritionInfo;
+  featured_image?: string;
+  image_alt_text?: string;
   owner_id: string;
   created_at: string;
   updated_at: string;
@@ -44,6 +54,40 @@ export interface NutritionInfo {
   fat?: string;
   fiber?: string;
   servings?: number;
+}
+
+// Recipe creation and update types
+export interface CreateRecipeData {
+  name: string;
+  ingredients: Ingredient[];
+  instructions: string;
+  source_url?: string;
+  prep_time?: string;
+  cuisine?: string;
+  estimated_nutrition?: NutritionInfo;
+  featured_image?: string;
+  image_alt_text?: string;
+  owner_id: string;
+}
+
+export interface UpdateRecipeData {
+  name?: string;
+  ingredients?: Ingredient[];
+  instructions?: string;
+  source_url?: string;
+  prep_time?: string;
+  cuisine?: string;
+  estimated_nutrition?: NutritionInfo;
+}
+
+// Recipe parsing from URL types
+export interface ParsedRecipeData {
+  name: string;
+  ingredients: Ingredient[];
+  instructions: string;
+  prep_time?: string;
+  cuisine?: string;
+  nutrition?: NutritionInfo;
 }
 
 export interface MealPlan {

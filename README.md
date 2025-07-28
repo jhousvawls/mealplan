@@ -8,8 +8,9 @@ The Meal Planner App helps users plan meals, manage recipes, generate grocery li
 
 ## Technology Stack
 
-- **Frontend**: React (SPA)
-- **Backend**: Node.js with Express.js
+- **Frontend**: React (SPA) with TypeScript and Vite
+- **Backend**: Node.js with Express.js and TypeScript
+- **Recipe Parsing**: Puppeteer + Cheerio for web scraping
 - **Database & Auth**: Supabase (PostgreSQL + Google OAuth)
 - **AI Engine**: OpenAI API (GPT-4/GPT-3.5-Turbo)
 - **Development**: Visual Studio Code
@@ -31,9 +32,14 @@ git clone https://github.com/jhousvawls/mealplan.git
 cd mealplan
 ```
 
-2. Install frontend dependencies:
+2. Install dependencies:
 ```bash
+# Frontend
 cd frontend
+npm install
+
+# Backend
+cd ../backend
 npm install
 ```
 
@@ -63,11 +69,17 @@ VITE_API_URL=http://localhost:3001
 # See docs/AUTHENTICATION_SETUP.md for detailed instructions
 ```
 
-6. Start Development Server:
+6. Start Development Servers:
 ```bash
+# Terminal 1: Start Backend API
+cd backend
+npm run dev
+# Backend API will be available at http://localhost:3001
+
+# Terminal 2: Start Frontend
 cd frontend
 npm run dev
-# App will be available at http://localhost:5177/
+# Frontend will be available at http://localhost:5173
 ```
 
 ## Project Structure
@@ -96,6 +108,7 @@ meal-planner-app/
 ## Core Features
 
 - **User Authentication**: Google OAuth via Supabase
+- **Recipe Import**: Real-time parsing from 20+ major food websites with intelligent image selection
 - **Meal Planning**: Weekly meal planning with drag-and-drop interface
 - **Recipe Management**: Personal recipe box with CRUD operations
 - **AI Integration**: AI-powered meal suggestions and recipe generation
@@ -113,6 +126,7 @@ meal-planner-app/
 ## Documentation
 
 - [Architecture](./docs/ARCHITECTURE.md) - System design and technical architecture
+- [Backend Implementation](./docs/BACKEND_IMPLEMENTATION.md) - Recipe parsing engine and API server
 - [Database](./docs/DATABASE.md) - Database schema and data models
 - [API](./docs/API.md) - Backend API documentation
 - [Development](./docs/DEVELOPMENT.md) - Development guidelines and best practices

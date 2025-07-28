@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../ui/Button';
 
 const LoginPage: React.FC = () => {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, signInAsDummy, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -16,6 +16,17 @@ const LoginPage: React.FC = () => {
       // The user will be redirected to /auth/callback and then to the dashboard
     } catch (err) {
       console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign in');
+    }
+  };
+
+  const handleDummySignIn = async () => {
+    try {
+      setError(null);
+      await signInAsDummy();
+      navigate('/');
+    } catch (err) {
+      console.error('Dummy login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     }
   };
@@ -92,9 +103,23 @@ const LoginPage: React.FC = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-background-secondary text-text-secondary">
-                  Secure authentication
+                  Or for testing
                 </span>
               </div>
+            </div>
+
+            {/* Dummy Login Button for Development */}
+            <div>
+              <button
+                onClick={handleDummySignIn}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg px-4 py-3 text-gray-700 font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="text-lg">🧪</span>
+                <span>
+                  {loading ? 'Signing in...' : 'Continue as Test User'}
+                </span>
+              </button>
             </div>
 
             {/* Features */}

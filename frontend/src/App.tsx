@@ -7,6 +7,7 @@ import ComingSoon from './components/common/ComingSoon';
 import LoginPage from './components/features/auth/LoginPage';
 import AuthCallback from './components/features/auth/AuthCallback';
 import ProtectedRoute from './components/features/auth/ProtectedRoute';
+import { RecipeBox } from './components/features/recipes/RecipeBox';
 
 function App() {
   return (
@@ -63,7 +64,7 @@ function App() {
               <Route path="/recipes" element={
                 <ProtectedRoute>
                   <Layout>
-                    <ComingSoon title="Recipe Box" description="Store and organize your favorite recipes" />
+                    <RecipeBox />
                   </Layout>
                 </ProtectedRoute>
               } />

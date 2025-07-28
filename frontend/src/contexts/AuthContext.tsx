@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  signInAsDummy: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -113,12 +114,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInAsDummy = async () => {
+    try {
+      setLoading(true);
+      // Create a dummy user for development
+      const dummyUser: User = {
+        id: 'dummy-user-123',
+        email: 'test@example.com',
+        user_metadata: {
+          full_name: 'Test User',
+          avatar_url: null,
+        },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as User;
+
+      const dummySession: Session = {
+        access_token: 'dummy-token',
+        refresh_token: 'dummy-refresh',
+        expires_in: 3600,
+        expires_at: Date.now() + 3600000,
+        token_type: 'bearer',
+        user: dummyUser,
+      } as Session;
+
+      setUser(dummyUser);
+      setSession(dummySession);
+      console.log('Signed in as dummy user for development');
+    } catch (error) {
+      console.error('Dummy sign in error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
     loading,
     signInWithGoogle,
     signOut,
+    signInAsDummy,
     isAuthenticated: !!user,
   };
 
