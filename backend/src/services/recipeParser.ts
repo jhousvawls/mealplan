@@ -1,7 +1,14 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteerExtra from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as cheerio from 'cheerio';
 import { logger } from '../utils/logger';
 import { ParsedRecipe, RecipeImage, ScrapingResult, SiteConfig } from '../types';
+import { userAgentRotator } from './userAgentRotator';
+import { domainRateLimiter } from './requestRateLimiter';
+
+// Add stealth plugin to avoid detection
+puppeteerExtra.use(StealthPlugin());
 
 class RecipeParserService {
   private browser: Browser | null = null;
@@ -85,20 +92,26 @@ class RecipeParserService {
 
   async initializeBrowser(): Promise<void> {
     if (!this.browser) {
-      logger.info('Initializing Puppeteer browser...');
-      this.browser = await puppeteer.launch({
+      logger.info('Initializing enhanced Puppeteer browser with stealth mode...');
+      
+      // Use puppeteer-extra with stealth plugin
+      this.browser = await puppeteerExtra.launch({
         headless: 'new',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-web-security',
+          '--disable-features=site-per-process',
           '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
         ],
       });
-      logger.info('Puppeteer browser initialized successfully');
+      
+      logger.info('Enhanced Puppeteer browser initialized successfully');
     }
   }
 
@@ -110,46 +123,111 @@ class RecipeParserService {
     }
   }
 
-  async parseRecipe(url: string): Promise<ScrapingResult> {
-    try {
-      await this.initializeBrowser();
-      
-      if (!this.browser) {
-        throw new Error('Failed to initialize browser');
+  async parseRecipe(url: string, maxRetries: number = 3): Promise<ScrapingResult> {
+    return this.parseRecipeWithRetry(url, maxRetries);
+  }
+
+  /**
+   * Enhanced parseRecipe with retry logic, rate limiting, and anti-detection
+   */
+  async parseRecipeWithRetry(url: string, maxRetries: number = 3): Promise<ScrapingResult> {
+    let lastError: Error | null = null;
+    const domain = new URL(url).hostname.replace('www.', '');
+    const rateLimiter = domainRateLimiter.getLimiter(domain);
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Apply rate limiting
+        await rateLimiter.waitForNextRequest();
+        
+        logger.info(`Parse attempt ${attempt}/${maxRetries} for URL: ${url}`);
+        
+        const result = await this.parseRecipeAttempt(url, attempt);
+        
+        // Mark request as completed
+        rateLimiter.completeRequest();
+        
+        if (result.success) {
+          logger.info(`Successfully parsed recipe on attempt ${attempt}`, { url, recipeName: result.recipe?.name });
+          return result;
+        }
+        
+        lastError = new Error(result.error || 'Parsing failed');
+        
+        // Don't retry on certain errors
+        if (this.isNonRetryableError(lastError)) {
+          logger.warn('Non-retryable error encountered, stopping retries', { url, error: lastError.message });
+          break;
+        }
+        
+        // Add exponential backoff delay between retries
+        if (attempt < maxRetries) {
+          const baseDelay = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+          const jitterDelay = baseDelay + (Math.random() * 1000); // Add 0-1s jitter
+          
+          logger.info(`Waiting ${jitterDelay}ms before retry ${attempt + 1}`, { url });
+          await new Promise(resolve => setTimeout(resolve, jitterDelay));
+        }
+        
+      } catch (error) {
+        rateLimiter.completeRequest();
+        lastError = error as Error;
+        
+        logger.warn(`Parse attempt ${attempt}/${maxRetries} failed:`, { 
+          url, 
+          error: lastError.message,
+          stack: lastError.stack?.substring(0, 200) 
+        });
+        
+        // Don't retry on certain errors
+        if (this.isNonRetryableError(lastError)) {
+          break;
+        }
       }
+    }
 
-      const page = await this.browser.newPage();
+    return {
+      recipe: undefined,
+      images: [],
+      metadata: { title: '', description: '', siteName: '', favicon: '' },
+      success: false,
+      error: `Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+    };
+  }
+
+  /**
+   * Single parsing attempt with enhanced anti-detection measures
+   */
+  private async parseRecipeAttempt(url: string, attempt: number): Promise<ScrapingResult> {
+    await this.initializeBrowser();
+    
+    if (!this.browser) {
+      throw new Error('Failed to initialize browser');
+    }
+
+    const page = await this.browser.newPage();
+    
+    try {
+      // Enhanced anti-detection setup
+      await this.setupPageForStealth(page, attempt);
       
-      // Set user agent and viewport
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-      await page.setViewport({ width: 1920, height: 1080 });
-
-      logger.info(`Navigating to URL: ${url}`);
+      logger.debug(`Navigating to URL: ${url} (attempt ${attempt})`);
+      
+      // Navigate with enhanced options
       await page.goto(url, { 
         waitUntil: 'networkidle2',
-        timeout: 30000 
+        timeout: 45000 // Increased timeout
       });
+
+      // Simulate human behavior
+      await this.simulateHumanBehavior(page);
 
       // Get page content
       const content = await page.content();
       const $ = cheerio.load(content);
 
-      // Try to parse using structured data first
-      let recipe = await this.parseStructuredData($);
-      
-      // If no structured data, try site-specific parsing
-      if (!recipe) {
-        const domain = new URL(url).hostname.replace('www.', '');
-        const siteConfig = this.siteConfigs.find(config => 
-          config.domains.some(d => domain.includes(d))
-        );
-        
-        if (siteConfig) {
-          recipe = await this.parseBySiteConfig($, siteConfig);
-        } else {
-          recipe = await this.parseGeneric($);
-        }
-      }
+      // Try multiple parsing strategies
+      let recipe = await this.parseWithFallbacks($, url);
 
       // Extract images
       const images = await this.extractImages($, page);
@@ -161,8 +239,6 @@ class RecipeParserService {
         siteName: $('meta[property="og:site_name"]').attr('content') || '',
         favicon: $('link[rel="icon"]').attr('href') || '',
       };
-
-      await page.close();
 
       if (recipe) {
         recipe.source_url = url;
@@ -177,16 +253,163 @@ class RecipeParserService {
         error: recipe ? undefined : 'Could not parse recipe from this URL',
       };
 
-    } catch (error) {
-      logger.error('Recipe parsing failed:', { url, error: (error as Error).message });
-      return {
-        recipe: undefined,
-        images: [],
-        metadata: { title: '', description: '', siteName: '', favicon: '' },
-        success: false,
-        error: (error as Error).message,
-      };
+    } finally {
+      await page.close();
     }
+  }
+
+  /**
+   * Setup page with anti-detection measures
+   */
+  private async setupPageForStealth(page: Page, attempt: number): Promise<void> {
+    // Rotate user agent
+    const userAgent = userAgentRotator.getRandomUserAgent();
+    await page.setUserAgent(userAgent);
+    
+    // Rotate viewport
+    const viewport = userAgentRotator.getRandomViewport();
+    await page.setViewport(viewport);
+    
+    // Remove webdriver property and other automation indicators
+    await page.evaluateOnNewDocument(() => {
+      // Remove webdriver property
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+      });
+      
+      // Mock plugins
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+      });
+      
+      // Mock languages
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      });
+    });
+    
+    // Set additional headers to appear more human
+    await page.setExtraHTTPHeaders({
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+    });
+    
+    logger.debug('Page setup for stealth mode completed', { 
+      attempt, 
+      userAgent: userAgent.substring(0, 50) + '...',
+      viewport 
+    });
+  }
+
+  /**
+   * Simulate human-like behavior on the page
+   */
+  private async simulateHumanBehavior(page: Page): Promise<void> {
+    try {
+      // Random scroll to simulate reading
+      await page.evaluate(() => {
+        const scrollAmount = Math.random() * 500 + 200; // 200-700px
+        window.scrollTo(0, scrollAmount);
+      });
+      
+      // Random wait time (1-3 seconds)
+      const waitTime = Math.random() * 2000 + 1000;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+      // Scroll back to top
+      await page.evaluate(() => {
+        window.scrollTo(0, 0);
+      });
+      
+      // Small additional wait
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (error) {
+      logger.debug('Human behavior simulation failed:', (error as Error).message);
+    }
+  }
+
+  /**
+   * Try multiple parsing strategies in order
+   */
+  private async parseWithFallbacks($: cheerio.CheerioAPI, url: string): Promise<ParsedRecipe | null> {
+    // Strategy 1: Structured data
+    try {
+      const result = await this.parseStructuredData($);
+      if (result && result.name && result.ingredients.length > 0) {
+        logger.debug('Parsing successful with structured data', { 
+          recipeName: result.name,
+          ingredientCount: result.ingredients.length 
+        });
+        return result;
+      }
+    } catch (error) {
+      logger.debug('Structured data parsing failed:', (error as Error).message);
+    }
+
+    // Strategy 2: Site-specific config
+    const siteConfig = this.getSiteConfig(url);
+    if (siteConfig) {
+      try {
+        const result = await this.parseBySiteConfig($, siteConfig);
+        if (result && result.name && result.ingredients.length > 0) {
+          logger.debug('Parsing successful with site config', { 
+            recipeName: result.name,
+            ingredientCount: result.ingredients.length 
+          });
+          return result;
+        }
+      } catch (error) {
+        logger.debug('Site config parsing failed:', (error as Error).message);
+      }
+    }
+
+    // Strategy 3: Generic parsing
+    try {
+      const result = await this.parseGeneric($);
+      if (result && result.name && result.ingredients.length > 0) {
+        logger.debug('Parsing successful with generic parser', { 
+          recipeName: result.name,
+          ingredientCount: result.ingredients.length 
+        });
+        return result;
+      }
+    } catch (error) {
+      logger.debug('Generic parsing failed:', (error as Error).message);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get site configuration for URL
+   */
+  private getSiteConfig(url: string): SiteConfig | null {
+    const domain = new URL(url).hostname.replace('www.', '');
+    return this.siteConfigs.find(config => 
+      config.domains.some(d => domain.includes(d))
+    ) || null;
+  }
+
+  /**
+   * Check if error should not be retried
+   */
+  private isNonRetryableError(error: Error): boolean {
+    const nonRetryableMessages = [
+      'Invalid URL',
+      'net::ERR_NAME_NOT_RESOLVED',
+      'net::ERR_INTERNET_DISCONNECTED',
+      'Navigation timeout',
+      'Protocol error',
+    ];
+    
+    return nonRetryableMessages.some(msg => 
+      error.message.includes(msg)
+    );
   }
 
   private async parseStructuredData($: cheerio.CheerioAPI): Promise<ParsedRecipe | null> {

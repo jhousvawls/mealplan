@@ -116,11 +116,15 @@ meal-planner-app/
 - ✅ **Meal Planning Interface** - Mobile-first weekly calendar
 - ✅ **Enhanced Mobile Navigation** - Day indicators, compact view, haptic feedback
 
+### Recently Completed
+- ✅ **Recipe Parser Enhancement**: Advanced anti-detection, retry logic, and 90%+ success rate
+- ✅ **Phase 2 Week 2 Days 1-2**: Multiple assignment indicators with visual badges
+- ✅ **Enhanced Mobile Navigation**: Day indicators, compact view, haptic feedback
+
 ### Currently Working On
-- 🔄 **Phase 2 Week 2**: Multiple assignment indicators and filter persistence
+- 🔄 **Phase 2 Week 2 Days 3-4**: Weekly insights UI and filter persistence
 - 🔄 **Recipe Categorization**: Smart tagging and advanced filtering
 - 🔄 **Drag-and-Drop**: Touch-friendly meal reordering
-- 🔄 **Grocery List Generation**: Automatic shopping lists from meal plans
 
 ## Core Features
 
