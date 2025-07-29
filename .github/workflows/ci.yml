@@ -26,6 +26,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       # Frontend Steps
       - name: Install frontend dependencies
@@ -46,12 +49,16 @@ jobs:
       - name: Test frontend
         run: |
           cd frontend
-          npm run test
+          npm run test:run
 
       - name: Build frontend
         run: |
           cd frontend
           npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-key' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3001' }}
 
       # Backend Steps
       - name: Install backend dependencies
@@ -91,6 +98,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: Install frontend dependencies
         run: |

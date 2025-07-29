@@ -9,7 +9,7 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  deploy-frontend:
+  build-and-test:
     runs-on: ubuntu-latest
     
     steps:
@@ -21,51 +21,97 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
+      # Frontend Steps
       - name: Install frontend dependencies
         run: |
           cd frontend
           npm ci
+
+      - name: Test frontend
+        run: |
+          cd frontend
+          npm run test:run
 
       - name: Build frontend
         run: |
           cd frontend
           npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-key' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3001' }}
 
-      - name: Deploy to Vercel
-        uses: vercel/action@v1
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
-
-  deploy-backend:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
+      # Backend Steps
       - name: Install backend dependencies
         run: |
           cd backend
           npm ci
 
+      - name: Test backend
+        run: |
+          cd backend
+          npm run test
+
       - name: Build backend
         run: |
           cd backend
           npm run build
+
+      # Upload build artifacts
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Upload backend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist/
+
+  deploy-frontend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
+          vercel-args: '--prod'
+
+  deploy-backend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download backend build
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist/
 
       - name: Deploy to Railway
         uses: bervProject/railway-deploy@v1.0.0
@@ -77,6 +123,7 @@ jobs:
   health-check:
     needs: [deploy-frontend, deploy-backend]
     runs-on: ubuntu-latest
+    environment: production
     
     steps:
       - name: Wait for deployment
@@ -88,4 +135,4 @@ jobs:
 
       - name: Health check backend
         run: |
-          curl -f ${{ secrets.BACKEND_URL }}/health || echo "Backend health check failed"
+          curl -f ${{ secrets.BACKEND_URL }}/api/health || echo "Backend health check failed"

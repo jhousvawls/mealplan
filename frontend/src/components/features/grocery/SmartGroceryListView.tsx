@@ -3,6 +3,7 @@ import { CheckIcon, PlusIcon, TrashIcon, PrinterIcon, SparklesIcon } from '@hero
 import { useAuth } from '../../../contexts/AuthContext';
 import Button from '../../ui/Button';
 import { PrintableGroceryList } from './PrintableGroceryList';
+import { WalmartExportButton } from './WalmartExportButton';
 import { staplesService } from '../../../services/staplesService';
 import type { GroceryItem, StapleSuggestion, HouseholdStaple } from '../../../types';
 
@@ -200,7 +201,7 @@ export function SmartGroceryListView({ mealPlanId, className = '' }: SmartGrocer
           </p>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           {stapleSuggestions.filter(s => s.suggested).length > 0 && !showStapleReview && (
             <Button
               variant="outline"
@@ -213,15 +214,23 @@ export function SmartGroceryListView({ mealPlanId, className = '' }: SmartGrocer
             </Button>
           )}
           {totalItems > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="text-blue-600 hover:text-blue-700"
-            >
-              <PrinterIcon className="h-4 w-4 mr-1" />
-              Print List
-            </Button>
+            <>
+              <WalmartExportButton
+                groceryItems={groceryItems}
+                size="sm"
+                variant="primary"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <PrinterIcon className="h-4 w-4 mr-1" />
+                Print List
+              </Button>
+            </>
           )}
           {checkedItems > 0 && (
             <Button
