@@ -32,20 +32,20 @@ export const RecipeBox: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="loading-spinner"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="page-title">
             Recipe Box
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="page-subtitle">
             {recipes.length} recipes saved
           </p>
         </div>
@@ -54,7 +54,7 @@ export const RecipeBox: React.FC = () => {
         <div className="relative">
           <Button
             onClick={() => setShowAddDropdown(!showAddDropdown)}
-            className="flex items-center space-x-2"
+            className="btn btn-primary flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
             <span>Add Recipe</span>
@@ -62,14 +62,14 @@ export const RecipeBox: React.FC = () => {
           </Button>
           
           {showAddDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-lg z-10">
               <div className="py-1">
                 <button
                   onClick={() => {
                     setShowImportModal(true);
                     setShowAddDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center space-x-2 transition-colors"
                 >
                   <Link2 className="w-4 h-4" />
                   <span>Import from URL</span>
@@ -79,7 +79,7 @@ export const RecipeBox: React.FC = () => {
                     setShowManualForm(true);
                     setShowAddDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                  className="w-full px-4 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center space-x-2 transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                   <span>Create Manually</span>
@@ -102,23 +102,23 @@ export const RecipeBox: React.FC = () => {
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-4 h-4" />
           <input
             type="text"
             placeholder="Search recipes or ingredients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input pl-10"
           />
         </div>
 
         {/* Cuisine Filter */}
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)] w-4 h-4" />
           <select
             value={selectedCuisine}
             onChange={(e) => setSelectedCuisine(e.target.value)}
-            className="pl-10 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+            className="input pl-10 pr-8 appearance-none"
           >
             <option value="">All Cuisines</option>
             {cuisines.map(cuisine => (
@@ -130,24 +130,24 @@ export const RecipeBox: React.FC = () => {
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-300">{error.message}</p>
+        <div className="p-4 bg-[var(--red)] bg-opacity-10 border border-[var(--red)] border-opacity-30 rounded-lg">
+          <p className="text-[var(--red)]">{error.message}</p>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && recipes.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <Link2 className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 mx-auto mb-6 bg-[var(--bg-hover)] rounded-full flex items-center justify-center">
+            <Link2 className="w-8 h-8 text-[var(--text-secondary)]" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3">
             No recipes yet
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-[var(--text-secondary)] mb-8 max-w-md mx-auto">
             Start building your recipe collection by importing from your favorite food blogs
           </p>
-          <Button onClick={() => setShowImportModal(true)}>
+          <Button onClick={() => setShowImportModal(true)} className="btn btn-primary">
             <Link2 className="w-4 h-4 mr-2" />
             Import Your First Recipe
           </Button>
@@ -166,7 +166,7 @@ export const RecipeBox: React.FC = () => {
       {/* No Results */}
       {!isLoading && recipes.length > 0 && filteredRecipes.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-[var(--text-secondary)]">
             No recipes match your search criteria
           </p>
         </div>
@@ -181,17 +181,15 @@ export const RecipeBox: React.FC = () => {
 
       {/* Manual Recipe Form Modal */}
       {showManualForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <ManualRecipeForm
-                onSuccess={(recipe) => {
-                  handleImportSuccess(recipe);
-                  setShowManualForm(false);
-                }}
-                onCancel={() => setShowManualForm(false)}
-              />
-            </div>
+        <div className="modal-overlay">
+          <div className="modal-content max-w-4xl max-h-[90vh] overflow-y-auto">
+            <ManualRecipeForm
+              onSuccess={(recipe) => {
+                handleImportSuccess(recipe);
+                setShowManualForm(false);
+              }}
+              onCancel={() => setShowManualForm(false)}
+            />
           </div>
         </div>
       )}
@@ -221,9 +219,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+    <div className="card card-hover">
       {/* Recipe Image */}
-      <div className="h-48 relative overflow-hidden">
+      <div className="h-48 relative overflow-hidden rounded-t-2xl">
         {recipe.featured_image && !imageError ? (
           <img
             src={recipe.featured_image}
@@ -232,12 +230,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+          <div className="h-full bg-gradient-to-br from-[var(--blue)] from-opacity-10 to-[var(--blue)] to-opacity-20 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-2 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center">
                 <span className="text-2xl">🍽️</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-[var(--text-secondary)]">
                 {recipe.cuisine || 'Recipe'}
               </p>
             </div>
@@ -248,21 +246,21 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
       {/* Recipe Content */}
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2">
+          <h3 className="font-semibold text-[var(--text-primary)] line-clamp-2">
             {recipe.name}
           </h3>
           {recipe.source_url && (
-            <Link2 className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
+            <Link2 className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0 ml-2" />
           )}
         </div>
 
         {/* Recipe Meta */}
-        <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <div className="flex items-center space-x-4 text-sm text-[var(--text-secondary)] mb-3">
           {recipe.prep_time && (
             <span>⏱️ {recipe.prep_time}</span>
           )}
           {recipe.cuisine && (
-            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+            <span className="px-2 py-1 bg-[var(--bg-hover)] rounded text-xs">
               {recipe.cuisine}
             </span>
           )}
@@ -270,20 +268,20 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
 
         {/* Ingredients Preview */}
         <div className="mb-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          <p className="text-sm text-[var(--text-secondary)] mb-1">
             {recipe.ingredients.length} ingredients
           </p>
           <div className="flex flex-wrap gap-1">
             {recipe.ingredients.slice(0, 3).map((ingredient, index) => (
               <span
                 key={index}
-                className="text-xs bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded"
+                className="text-xs bg-[var(--bg-hover)] text-[var(--text-secondary)] px-2 py-1 rounded"
               >
                 {ingredient.name}
               </span>
             ))}
             {recipe.ingredients.length > 3 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-[var(--text-secondary)] opacity-75">
                 +{recipe.ingredients.length - 3} more
               </span>
             )}
@@ -293,10 +291,10 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         {/* Actions */}
         <div className="flex items-center justify-between">
           <div className="flex space-x-2 flex-1">
-            <Button variant="outline" size="sm" className="flex-1">
+            <Button variant="outline" size="sm" className="btn btn-outline flex-1">
               View Recipe
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="btn btn-ghost">
               ⋯
             </Button>
           </div>

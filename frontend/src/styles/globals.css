@@ -288,7 +288,7 @@ body {
   }
   
   .nav-item-active {
-    @apply bg-blue bg-opacity-10 text-blue;
+    @apply bg-blue text-white;
   }
   
   /* Page Header */
