@@ -2,6 +2,15 @@ import { supabase } from '../lib/supabase';
 import type { Recipe, CreateRecipeData, UpdateRecipeData } from '../types';
 
 export class RecipeService {
+  // Helper to check if we're using dummy user
+  private isDummyUser(userId: string): boolean {
+    return userId === 'dummy-user-123';
+  }
+
+  // Mock recipes for dummy user
+  private getMockRecipes(): Recipe[] {
+    return [];
+  }
   // Create a new recipe
   async createRecipe(data: CreateRecipeData): Promise<Recipe> {
     const { data: recipe, error } = await supabase
@@ -36,6 +45,11 @@ export class RecipeService {
 
   // Get all recipes for the current user
   async getUserRecipes(userId: string): Promise<Recipe[]> {
+    // Return mock data for dummy user
+    if (this.isDummyUser(userId)) {
+      return this.getMockRecipes();
+    }
+
     const { data: recipes, error } = await supabase
       .from('recipes')
       .select('*')

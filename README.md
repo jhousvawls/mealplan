@@ -131,7 +131,7 @@ meal-planner-app/
 ### 🎯 MVP Features (Completed)
 - **Manual Recipe Entry**: Complete recipe creation form with ingredients, instructions, and metadata
 - **Favorites System**: Interactive heart buttons with optimistic UI updates and haptic feedback
-- **Grocery List Management**: Category-organized shopping lists with progress tracking
+- **Grocery List Management**: Category-organized shopping lists with progress tracking and printable layouts
 
 ### 🚀 Advanced Features
 - **User Authentication**: Google OAuth via Supabase

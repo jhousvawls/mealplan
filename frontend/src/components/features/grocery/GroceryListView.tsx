@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { CheckIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, PlusIcon, TrashIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../../contexts/AuthContext';
 import Button from '../../ui/Button';
+import { PrintableGroceryList } from './PrintableGroceryList';
 import type { GroceryItem, MealPlan } from '../../../types';
 
 interface GroceryListViewProps {
@@ -108,6 +109,21 @@ export function GroceryListView({ mealPlanId, className = '' }: GroceryListViewP
     setGroceryItems(items => items.filter(item => !item.checked));
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Generate meal plan info for print
+  const mealPlanName = "Weekly Grocery List";
+  const weekRange = `Week of ${new Date().toLocaleDateString('en-US', { 
+    month: 'long', 
+    day: 'numeric' 
+  })} - ${new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+    month: 'long', 
+    day: 'numeric', 
+    year: 'numeric' 
+  })}`;
+
   return (
     <div className={`grocery-list-view ${className}`}>
       {/* Header */}
@@ -122,6 +138,17 @@ export function GroceryListView({ mealPlanId, className = '' }: GroceryListViewP
         </div>
 
         <div className="flex space-x-2">
+          {totalItems > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <PrinterIcon className="h-4 w-4 mr-1" />
+              Print List
+            </Button>
+          )}
           {checkedItems > 0 && (
             <Button
               variant="outline"
@@ -270,6 +297,13 @@ export function GroceryListView({ mealPlanId, className = '' }: GroceryListViewP
           </Button>
         </div>
       )}
+
+      {/* Hidden Printable Version */}
+      <PrintableGroceryList
+        groceryItems={groceryItems}
+        mealPlanName={mealPlanName}
+        weekRange={weekRange}
+      />
     </div>
   );
 }

@@ -11,6 +11,31 @@ import type {
 } from '../types';
 
 export class MealPlanService {
+  // Helper to check if we're using dummy user
+  private isDummyUser(userId: string): boolean {
+    return userId === 'dummy-user-123';
+  }
+
+  // Mock data for dummy user
+  private getMockMealPlan(): MealPlan {
+    return {
+      id: 'mock-meal-plan-1',
+      owner_id: 'dummy-user-123',
+      plan_name: 'Week of January 27, 2025',
+      start_date: '2025-01-27',
+      grocery_list: [
+        { item: 'Tomatoes', quantity: '4 large', category: 'Produce', checked: false, notes: 'For pasta sauce' },
+        { item: 'Onions', quantity: '2 medium', category: 'Produce', checked: true, notes: '' },
+        { item: 'Garlic', quantity: '1 bulb', category: 'Produce', checked: false, notes: '' },
+        { item: 'Bell Peppers', quantity: '3', category: 'Produce', checked: false, notes: 'Red or yellow' },
+        { item: 'Milk', quantity: '1 gallon', category: 'Dairy', checked: false, notes: '' },
+        { item: 'Cheese', quantity: '8 oz', category: 'Dairy', checked: false, notes: 'Cheddar' },
+      ],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      planned_meals: []
+    };
+  }
   // Helper to convert day name to integer (0=Monday, 6=Sunday)
   private dayToInt(day: DayOfWeek): number {
     const dayMap: Record<DayOfWeek, number> = {
@@ -95,6 +120,11 @@ export class MealPlanService {
 
   // Get meal plan for a specific week
   async getMealPlanForWeek(userId: string, startDate: string): Promise<MealPlan | null> {
+    // Return mock data for dummy user
+    if (this.isDummyUser(userId)) {
+      return this.getMockMealPlan();
+    }
+
     const { data: mealPlans, error } = await supabase
       .from('meal_plans')
       .select(`

@@ -348,6 +348,7 @@ const generateMealSuggestions = async (preferences: MealPreferences) => {
 - As a user, I want to see my grocery list organized by store layout
 - As a user, I want to track grocery spending over time
 - As a user, I want to export my list to grocery pickup services
+- As a user, I want to print my grocery list for shopping
 
 **Technical Requirements:**
 - Interactive grocery list with check-off functionality
@@ -355,6 +356,7 @@ const generateMealSuggestions = async (preferences: MealPreferences) => {
 - Spending tracking and budgeting
 - Export formats for various grocery services
 - Shopping history and analytics
+- Print-optimized grocery list layouts
 
 **Acceptance Criteria:**
 - [ ] Users can check off items while shopping
@@ -362,6 +364,30 @@ const generateMealSuggestions = async (preferences: MealPreferences) => {
 - [ ] Spending is tracked and categorized
 - [ ] Lists export to Walmart, Instacart, etc.
 - [ ] Shopping history provides insights
+- [x] Users can print professional grocery lists
+
+**Implementation Details:**
+```typescript
+// Printable grocery list component
+<PrintableGroceryList
+  groceryItems={groceryItems}
+  mealPlanName="Weekly Grocery List"
+  weekRange="Week of January 27 - February 2, 2025"
+/>
+
+// Print functionality
+const handlePrint = () => {
+  window.print();
+};
+```
+
+**Print Features:**
+- **Professional Layout**: Clean, organized design optimized for 8.5" x 11" paper
+- **Category Organization**: Items grouped by store sections with clear headers
+- **Shopping Statistics**: Total items, categories, and completion tracking
+- **Checkboxes**: Physical checkboxes for marking items while shopping
+- **Item Details**: Quantities, notes, and special instructions included
+- **Print Optimization**: Hidden from screen, only visible when printing
 
 ### 5.2 Inventory Management
 
