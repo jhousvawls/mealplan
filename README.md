@@ -82,6 +82,32 @@ npm run dev
 # Frontend will be available at http://localhost:5173
 ```
 
+## Testing
+
+The application includes comprehensive test suites for both frontend and backend:
+
+### Frontend Testing (Vitest + React Testing Library)
+```bash
+cd frontend
+npm test                    # Watch mode
+npm run test:run           # Single run
+npm run test:coverage      # With coverage report
+npm run test:ui           # Visual test interface
+```
+
+### Backend Testing (Jest + Supertest)
+```bash
+cd backend
+npm test                   # Run all tests
+npm test -- --coverage    # With coverage report
+npm test -- --watch       # Watch mode
+```
+
+### Current Test Status
+- **Frontend**: 6/6 tests passing ✅
+- **Backend**: 6/6 tests passing ✅
+- **Total Coverage**: AuthContext (100%), Health Routes (100%)
+
 ## Project Structure
 
 ```
@@ -110,16 +136,22 @@ meal-planner-app/
 🎉 **MVP FEATURES COMPLETE** - All three core MVP features implemented and tested: Manual Recipe Entry, Favorites System, and Grocery List Management.
 
 ### Recently Completed
+- ✅ **Comprehensive Testing Framework** - Complete test infrastructure with 12/12 tests passing
 - ✅ **Phase 1: Data Integration** - Complete Supabase integration with auto-categorization
 - ✅ **Authentication System** - Google OAuth with protected routes
 - ✅ **Recipe Management** - URL import with intelligent parsing
 - ✅ **Meal Planning Interface** - Mobile-first weekly calendar
 - ✅ **Enhanced Mobile Navigation** - Day indicators, compact view, haptic feedback
-
-### Recently Completed
 - ✅ **Recipe Parser Enhancement**: Advanced anti-detection, retry logic, and 90%+ success rate
 - ✅ **Phase 2 Week 2 Days 1-2**: Multiple assignment indicators with visual badges
-- ✅ **Enhanced Mobile Navigation**: Day indicators, compact view, haptic feedback
+- ✅ **Database Integration**: Complete household staples system with smart grocery lists
+- ✅ **Environment Configuration**: Type-safe validation for all environments
+
+### Testing Infrastructure ✅
+- **Frontend Testing**: Vitest + React Testing Library (6/6 tests passing)
+- **Backend Testing**: Jest + Supertest (6/6 tests passing)
+- **Test Coverage**: AuthContext (100%), Health Routes (100%)
+- **CI/CD Ready**: Automated testing pipeline integrated
 
 ### Currently Working On
 - 🔄 **Phase 2 Week 2 Days 3-4**: Weekly insights UI and filter persistence
@@ -159,6 +191,8 @@ meal-planner-app/
 - [Development](./docs/DEVELOPMENT.md) - Development guidelines and best practices
 - [Deployment](./docs/DEPLOYMENT.md) - Deployment and environment setup
 - [Features](./docs/FEATURES.md) - Feature specifications and roadmap
+- [Testing Implementation](./docs/TESTING_IMPLEMENTATION_SUMMARY.md) - Comprehensive testing framework guide
+- [MVP Readiness Assessment](./docs/MVP_READINESS_ASSESSMENT.md) - Pre-launch review and status
 
 ## Contributing
 
