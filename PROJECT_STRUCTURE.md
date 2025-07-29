@@ -125,6 +125,7 @@ frontend/
 │   │   ├── NotificationContext.tsx
 │   │   └── MealPlanContext.tsx
 │   ├── utils/                    # Utility functions
+│   │   ├── logger.ts             # Frontend logging system with React hooks
 │   │   ├── formatters/
 │   │   │   ├── date.ts
 │   │   │   ├── currency.ts
@@ -225,6 +226,7 @@ backend/
 │   │   ├── Grocery.ts
 │   │   └── Household.ts
 │   ├── utils/                    # Utility functions
+│   │   ├── logger.ts             # Enhanced logging system with multiple transports
 │   │   ├── database/
 │   │   │   ├── connection.ts
 │   │   │   └── queries.ts
