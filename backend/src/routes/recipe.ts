@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler, createError } from '../middleware/errorHandler';
 import { recipeParser } from '../services/recipeParser';
-import { ParseRequest, ParseResponse } from '../types';
+import { ParseRequest, ParseResponse, ParseTextRequest, ParseTextResponse } from '../types';
 import validator from 'validator';
 import { logger } from '../utils/logger';
 
@@ -165,6 +165,60 @@ router.get('/supported-domains', asyncHandler(async (req: Request, res: Response
       ],
     },
   });
+}));
+
+// Parse recipe from text (for social media content)
+router.post('/parse-text', asyncHandler(async (req: Request, res: Response) => {
+  const { text, context, sourceUrl }: ParseTextRequest = req.body;
+
+  // Validate input
+  if (!text || text.trim().length === 0) {
+    throw createError('Recipe text is required', 400, 'TEXT_REQUIRED');
+  }
+
+  if (text.trim().length > 10000) {
+    throw createError('Recipe text is too long (max 10,000 characters)', 400, 'TEXT_TOO_LONG');
+  }
+
+  logger.info(`Parsing recipe from text, context: ${context || 'general'}`);
+
+  try {
+    // Use OpenAI to extract recipe data from text
+    const result = await recipeParser.parseRecipeFromText(text, context, sourceUrl);
+
+    if (!result.success) {
+      throw createError(
+        result.error || 'Failed to parse recipe from text',
+        422,
+        'TEXT_PARSING_FAILED'
+      );
+    }
+
+    const response: ParseTextResponse = {
+      success: true,
+      data: result.recipe,
+      message: 'Recipe parsed successfully from text',
+      confidence: result.confidence || 0.8,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    logger.error('Recipe text parsing error:', { 
+      textLength: text.length, 
+      context, 
+      error: (error as Error).message 
+    });
+    
+    if ((error as any).statusCode) {
+      throw error;
+    }
+
+    throw createError(
+      'Failed to parse recipe from text. Please check the format and try again.',
+      422,
+      'TEXT_PARSING_ERROR'
+    );
+  }
 }));
 
 // Health check for recipe parsing service

@@ -205,3 +205,14 @@ export const useCheckDuplicate = () => {
       recipeService.checkDuplicateRecipe(user!.id, sourceUrl),
   });
 };
+
+// Parse recipe from text mutation (for social media content)
+export const useParseRecipeFromText = () => {
+  return useMutation({
+    mutationFn: ({ text, context, sourceUrl }: { 
+      text: string; 
+      context?: 'social_media' | 'general'; 
+      sourceUrl?: string; 
+    }) => recipeService.parseRecipeFromText(text, context, sourceUrl),
+  });
+};

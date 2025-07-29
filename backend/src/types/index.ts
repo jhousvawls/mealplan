@@ -59,6 +59,20 @@ export interface ParseResponse {
   message?: string;
 }
 
+export interface ParseTextRequest {
+  text: string;
+  context?: 'social_media' | 'general';
+  sourceUrl?: string;
+}
+
+export interface ParseTextResponse {
+  success: boolean;
+  data?: ParsedRecipe;
+  error?: string;
+  message?: string;
+  confidence?: number;
+}
+
 export interface ImageProcessingOptions {
   resize?: {
     width?: number;

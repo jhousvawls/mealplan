@@ -173,6 +173,36 @@ export class RecipeService {
     }
   }
 
+  // Parse recipe from text using backend API (for social media content)
+  async parseRecipeFromText(text: string, context?: 'social_media' | 'general', sourceUrl?: string): Promise<any> {
+    try {
+      const response = await fetch('http://localhost:3001/api/recipes/parse-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text.trim(),
+          context: context || 'general',
+          sourceUrl: sourceUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to parse recipe from text`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to parse recipe from text');
+    }
+  }
+
   // Import recipe from URL
   async importRecipeFromUrl(url: string, userId: string): Promise<Recipe> {
     try {

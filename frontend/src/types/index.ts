@@ -183,10 +183,42 @@ export interface PlannedMeal {
 
 export interface GroceryItem {
   item: string;
-  quantity: string;
-  category: string;
-  checked: boolean;
+  quantity?: string;
+  category?: string;
+  checked?: boolean;
   notes?: string;
+  source?: 'recipe' | 'staple' | 'manual'; // Track where the item came from
+  staple_id?: string; // Reference to household staple if applicable
+}
+
+export interface HouseholdStaple {
+  id: string;
+  household_id: string;
+  item_name: string;
+  category: string;
+  frequency: 'weekly' | 'biweekly' | 'monthly';
+  is_active: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StapleUsageHistory {
+  id: string;
+  household_staple_id: string;
+  meal_plan_id: string;
+  added_to_list_at: string;
+  quantity?: string;
+  was_purchased: boolean;
+  purchased_at?: string;
+}
+
+export interface StapleSuggestion {
+  staple: HouseholdStaple;
+  suggested: boolean;
+  reason: string; // "weekly_due", "biweekly_due", "not_purchased_recently"
+  last_purchased?: string;
+  days_since_last_purchase?: number;
 }
 
 export interface MealPlanShare {

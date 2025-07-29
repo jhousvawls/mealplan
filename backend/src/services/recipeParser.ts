@@ -128,6 +128,215 @@ class RecipeParserService {
   }
 
   /**
+   * Parse recipe from text using OpenAI (for social media content)
+   */
+  async parseRecipeFromText(text: string, context?: string, sourceUrl?: string): Promise<{
+    success: boolean;
+    recipe?: ParsedRecipe;
+    error?: string;
+    confidence?: number;
+  }> {
+    try {
+      logger.info('Parsing recipe from text using OpenAI', { 
+        textLength: text.length, 
+        context: context || 'general' 
+      });
+
+      // Check if OpenAI is available
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Create a specialized prompt for recipe extraction
+      const prompt = this.createRecipeExtractionPrompt(text, context);
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a recipe extraction expert. Extract structured recipe data from text and return it as valid JSON. Be precise and thorough.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1, // Low temperature for consistent extraction
+        max_tokens: 2000,
+      });
+
+      const responseText = completion.choices[0]?.message?.content;
+      if (!responseText) {
+        throw new Error('No response from OpenAI');
+      }
+
+      // Parse the JSON response
+      let parsedData;
+      try {
+        // Extract JSON from response (in case there's extra text)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const jsonText = jsonMatch ? jsonMatch[0] : responseText;
+        parsedData = JSON.parse(jsonText);
+      } catch (parseError) {
+        logger.error('Failed to parse OpenAI JSON response:', responseText);
+        throw new Error('Invalid JSON response from OpenAI');
+      }
+
+      // Validate and structure the recipe data
+      const recipe = this.validateAndStructureRecipe(parsedData, sourceUrl);
+      
+      if (!recipe.name || recipe.ingredients.length === 0) {
+        throw new Error('Incomplete recipe data extracted');
+      }
+
+      // Calculate confidence based on completeness
+      const confidence = this.calculateExtractionConfidence(recipe);
+
+      logger.info('Successfully parsed recipe from text', {
+        recipeName: recipe.name,
+        ingredientCount: recipe.ingredients.length,
+        confidence
+      });
+
+      return {
+        success: true,
+        recipe,
+        confidence
+      };
+
+    } catch (error) {
+      logger.error('Recipe text parsing failed:', (error as Error).message);
+      return {
+        success: false,
+        error: (error as Error).message
+      };
+    }
+  }
+
+  /**
+   * Create a specialized prompt for recipe extraction
+   */
+  private createRecipeExtractionPrompt(text: string, context?: string): string {
+    const contextNote = context === 'social_media' 
+      ? 'This text is from a social media post (Facebook/Instagram), so it may contain informal language, emojis, and non-recipe content.'
+      : 'This text contains recipe information.';
+
+    return `${contextNote}
+
+Extract the recipe information from the following text and return it as a JSON object with this exact structure:
+
+{
+  "name": "Recipe Name",
+  "ingredients": [
+    {
+      "name": "ingredient name",
+      "amount": "quantity",
+      "unit": "unit of measurement",
+      "notes": "any additional notes (optional)"
+    }
+  ],
+  "instructions": "Step-by-step cooking instructions",
+  "prep_time": "preparation time (e.g., '15 minutes')",
+  "cook_time": "cooking time (e.g., '30 minutes')",
+  "total_time": "total time (e.g., '45 minutes')",
+  "servings": 4,
+  "cuisine": "cuisine type (optional)",
+  "category": "meal category (optional)",
+  "difficulty": "easy/medium/hard (optional)",
+  "description": "brief description (optional)"
+}
+
+Rules:
+1. Extract ingredients with proper quantities and units when available
+2. If quantities are missing, leave amount and unit empty
+3. Combine all cooking steps into a single instructions field
+4. Parse time expressions like "15 min" as "15 minutes"
+5. If information is missing, omit those fields
+6. Clean up any emojis or social media formatting
+7. Focus only on recipe content, ignore other text
+
+Text to parse:
+${text}`;
+  }
+
+  /**
+   * Validate and structure the extracted recipe data
+   */
+  private validateAndStructureRecipe(data: any, sourceUrl?: string): ParsedRecipe {
+    const recipe: ParsedRecipe = {
+      name: (data.name || '').trim(),
+      ingredients: [],
+      instructions: (data.instructions || '').trim(),
+      source_url: sourceUrl || '',
+      available_images: [],
+    };
+
+    // Process ingredients
+    if (Array.isArray(data.ingredients)) {
+      recipe.ingredients = data.ingredients.map((ing: any) => ({
+        name: (ing.name || '').trim(),
+        amount: (ing.amount || '').trim(),
+        unit: (ing.unit || '').trim(),
+        notes: ing.notes ? ing.notes.trim() : undefined,
+      })).filter((ing: any) => ing.name); // Remove empty ingredients
+    }
+
+    // Add optional fields if present
+    if (data.prep_time) recipe.prep_time = data.prep_time.trim();
+    if (data.cook_time) recipe.cook_time = data.cook_time.trim();
+    if (data.total_time) recipe.total_time = data.total_time.trim();
+    if (data.servings && !isNaN(data.servings)) recipe.servings = parseInt(data.servings);
+    if (data.cuisine) recipe.cuisine = data.cuisine.trim();
+    if (data.category) recipe.category = data.category.trim();
+    if (data.difficulty) recipe.difficulty = data.difficulty.trim();
+    if (data.description) recipe.description = data.description.trim();
+
+    return recipe;
+  }
+
+  /**
+   * Calculate confidence score based on recipe completeness
+   */
+  private calculateExtractionConfidence(recipe: ParsedRecipe): number {
+    let score = 0;
+    let maxScore = 0;
+
+    // Name (required)
+    maxScore += 20;
+    if (recipe.name && recipe.name.length > 3) score += 20;
+
+    // Ingredients (required)
+    maxScore += 30;
+    if (recipe.ingredients.length > 0) {
+      score += 15;
+      // Bonus for ingredients with quantities
+      const withQuantities = recipe.ingredients.filter(ing => ing.amount).length;
+      score += Math.min(15, (withQuantities / recipe.ingredients.length) * 15);
+    }
+
+    // Instructions (required)
+    maxScore += 25;
+    if (recipe.instructions && recipe.instructions.length > 20) score += 25;
+
+    // Optional fields (bonus points)
+    maxScore += 25;
+    if (recipe.prep_time) score += 5;
+    if (recipe.cook_time) score += 5;
+    if (recipe.servings) score += 5;
+    if (recipe.cuisine) score += 3;
+    if (recipe.category) score += 3;
+    if (recipe.description) score += 4;
+
+    return Math.round((score / maxScore) * 100);
+  }
+
+  /**
    * Enhanced parseRecipe with retry logic, rate limiting, and anti-detection
    */
   async parseRecipeWithRetry(url: string, maxRetries: number = 3): Promise<ScrapingResult> {
